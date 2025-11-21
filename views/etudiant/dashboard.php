@@ -1,0 +1,297 @@
+<?php
+$pageTitle = 'Tableau de bord étudiant';
+ob_start();
+?>
+
+<div class="dashboard-header">
+    <div class="welcome-message">
+        <p class="text-muted">
+            <i class="fas fa-calendar-alt"></i> <?= date('l d F Y') ?>
+            <span class="mx-2">•</span>
+            <i class="fas fa-user-graduate"></i> <?= htmlspecialchars($classe['intitule'] ?? 'Non affecté') ?>
+        </p>
+    </div>
+    <div class="quick-actions">
+        <a href="/hec/etudiant/notes" class="btn btn-primary">
+            <i class="fas fa-chart-line"></i> Mes notes
+        </a>
+        
+    </div>
+</div>
+
+<div class="dashboard-cards">
+    <!-- Carte des notes moyennes -->
+    <div class="dashboard-card">
+        <div class="card-icon bg-primary">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="card-content">
+            <h3>Moyenne générale</h3>
+            <div class="average-grade">
+                <span class="grade"><?= number_format($stats['moyenne_generale'] ?? 0, 2, ',', ' ') ?></span>
+                <span class="grade-max">/ 20</span>
+                <?php if (isset($stats['evolution_moyenne'])): ?>
+                    <span class="evolution <?= $stats['evolution_moyenne'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                        <i class="fas fa-arrow-<?= $stats['evolution_moyenne'] >= 0 ? 'up' : 'down' ?>"></i>
+                        <?= abs($stats['evolution_moyenne']) ?>%
+                    </span>
+                <?php endif; ?>
+            </div>
+            <p class="text-muted">Sur <?= $stats['nb_matieres'] ?? 0 ?> matière(s) évaluée(s)</p>
+        </div>
+    </div>
+    
+    
+    
+    <!-- Carte des dernières notes -->
+    <div class="dashboard-card">
+        <div class="card-icon bg-info">
+            <i class="fas fa-clipboard-check"></i>
+        </div>
+        <div class="card-content">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>Dernières notes</h3>
+                <a href="/hec/etudiant/notes" class="btn btn-sm btn-outline-primary">Voir tout</a>
+            </div>
+            
+            <?php if (!empty($dernieres_notes)): ?>
+                <ul class="recent-notes">
+                    <?php foreach ($dernieres_notes as $note): ?>
+                    <li class="note-item">
+                        <div class="note-matiere">
+                            <strong><?= htmlspecialchars($note['matiere_nom']) ?></strong>
+                            <span class="badge badge-<?= $note['valeur'] >= 10 ? 'success' : 'danger' ?>">
+                                <?= number_format($note['valeur'], 2, ',', ' ') ?>/20
+                            </span>
+                        </div>
+                        <div class="note-details">
+                            <span class="text-muted">
+                                <?= htmlspecialchars($note['type_evaluation']) ?> 
+                                (Coef. <?= $note['coefficient'] ?>)
+                            </span>
+                            <span class="note-date">
+                                <?= date('d/m/Y', strtotime($note['date_evaluation'])) ?>
+                            </span>
+                        </div>
+                        <?php if (!empty($note['appreciation'])): ?>
+                            <div class="note-appreciation">
+                                <i class="fas fa-comment"></i> 
+                                <?= htmlspecialchars($note['appreciation']) ?>
+                            </div>
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="text-muted">Aucune note enregistrée</p>
+            <?php endif; ?>
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+<style>
+/* Styles spécifiques au tableau de bord */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.welcome-message h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--primary-color);
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.average-grade {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.grade-max {
+    font-size: 1.2rem;
+    color: #6c757d;
+    font-weight: normal;
+}
+
+.evolution {
+    font-size: 1rem;
+    margin-left: 0.5rem;
+}
+
+.next-class {
+    margin-top: 1rem;
+}
+
+.next-class-time {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.next-class-details h4 {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.recent-notes, .recent-documents {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.note-item, .document-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.note-item:last-child, .document-item:last-child {
+    border-bottom: none;
+}
+
+.note-matiere {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.note-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.note-appreciation {
+    font-style: italic;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.document-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+}
+
+.document-icon {
+    font-size: 1.5rem;
+    color: #6c757d;
+    width: 40px;
+    text-align: center;
+}
+
+.document-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.document-title {
+    font-weight: 500;
+    color: var(--primary-color);
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.document-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.document-actions {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.document-item:hover .document-actions {
+    opacity: 1;
+}
+
+
+
+/* Responsive */
+@media (max-width: 992px) {
+    .dashboard-cards {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .document-meta {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+</style>
+
+<?php
+$content = ob_get_clean();
+require_once __DIR__ . '/../layouts/main.php';
+?>
