@@ -133,7 +133,9 @@ ob_start();
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="m-0 font-weight-bold text-primary">Matières attribuées à la classe</h6>
-                                <a href="<?= BASE_URL ?>admin/classes/assign_matiere.php?classe_id=<?= $classe['id'] ?>" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Attribuer une matière</a>
+                <a href="<?= BASE_URL ?>admin/classes/assign-matiere/<?= (int)$classe['id'] ?>" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus"></i> Attribuer une matière
+                </a>
             </div>
             <?php if (!empty($assignedMatieres)): ?>
                 <div class="table-responsive">
@@ -190,40 +192,7 @@ ob_start();
     </div>
 </div>
 
-<!-- Modal Attribuer une matière -->
-<div class="modal fade" id="addMatiereModal" tabindex="-1" aria-labelledby="addMatiereModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addMatiereModalLabel">Attribuer une matière à la classe</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addMatiereForm" action="<?= BASE_URL ?>admin/classes/assign-matiere/<?= $classe['id'] ?>" method="POST">
-                    <input type="hidden" name="classe_id" value="<?= $classe['id'] ?>">
-                    <div class="mb-3">
-                        <label for="matiereSelect" class="form-label">Matière</label>
-                        <select class="form-control" id="matiereSelect" name="matiere_id" required>
-                            <option value="">Sélectionner une matière</option>
-                            <?php foreach ($allMatieres as $matiere): ?>
-                                <option value="<?= htmlspecialchars($matiere['id']) ?>"><?= htmlspecialchars($matiere['intitule']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="coefficient" class="form-label">Coefficient</label>
-                        <input type="number" class="form-control" id="coefficient" name="coefficient" min="1" value="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="credits" class="form-label">Crédits</label>
-                        <input type="number" class="form-control" id="credits" name="credits" min="1" value="1" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Attribuer</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+ 
 
 
 

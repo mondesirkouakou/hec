@@ -125,6 +125,16 @@ switch ($request_uri) {
         require_once __DIR__ . '/routes/chef_classe.php';
         break;
 
+    // Routes professeur
+    case (preg_match('/^\/professeur\//', $request_uri) ? true : false):
+        if (!isLoggedIn() || ($_SESSION['user_role'] ?? '') !== 'professeur') {
+            $_SESSION['error'] = "Accès non autorisé. Veuillez vous connecter en tant que professeur.";
+            header('Location: ' . BASE_URL . 'login');
+            exit();
+        }
+        require_once __DIR__ . '/routes/professeur.php';
+        break;
+
     // Routes étudiant
     case (preg_match('/^\/etudiant\//', $request_uri) ? true : false):
         if (!isLoggedIn() || ($_SESSION['user_role'] ?? '') !== 'etudiant') {

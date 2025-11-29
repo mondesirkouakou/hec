@@ -169,9 +169,13 @@ switch ($path) {
                 }
                 break;
 
-            case 'assign-matiere': // Gère /classes/assign-matiere/{id}
+            case 'assign-matiere':
                 if ($id_segment && is_numeric($id_segment)) {
-                    $controller->assignMatiere($id_segment);
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        $controller->assignMatiere($id_segment);
+                    } else {
+                        $controller->assignMatiereForm($id_segment);
+                    }
                 } else {
                     http_response_code(400);
                     echo "Bad Request: Missing or invalid class ID for subject assignment.";

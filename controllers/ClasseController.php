@@ -240,40 +240,67 @@ class ClasseController {
      */
     public function assignMatiere($classeId) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'classe_id' => $classeId,
-                'matiere_id' => $_POST['matiere_id'] ?? null,
-                'coefficient' => $_POST['coefficient'] ?? null,
-                'credits' => $_POST['credits'] ?? null
-            ];
+            $matiereIntitule = trim($_POST['matiere_intitule'] ?? '');
+            $coefficient = $_POST['coefficient'] ?? null;
+            $credits = $_POST['credits'] ?? null;
 
             $errors = [];
-            if (empty($data['matiere_id'])) {
-                $errors[] = "Veuillez sélectionner une matière.";
+            if (empty($matiereIntitule)) {
+                $errors[] = "Veuillez renseigner le nom de la matière.";
             }
-            if (empty($data['coefficient']) || !is_numeric($data['coefficient']) || $data['coefficient'] <= 0) {
+            if (empty($coefficient) || !is_numeric($coefficient) || $coefficient <= 0) {
                 $errors[] = "Le coefficient doit être un nombre positif.";
             }
-            if (empty($data['credits']) || !is_numeric($data['credits']) || $data['credits'] <= 0) {
+            if (empty($credits) || !is_numeric($credits) || $credits <= 0) {
                 $errors[] = "Les crédits doivent être un nombre positif.";
             }
 
             if (empty($errors)) {
-                // Appeler la méthode du modèle pour attribuer la matière
-                $success = $this->classeModel->assignMatiereToClass($data);
-
-                if ($success) {
-                    $_SESSION['success'] = "Matière attribuée avec succès à la classe.";
+                $matiereModel = new Matiere($this->db);
+                $existing = $matiereModel->getByIntitule($matiereIntitule);
+                $matiereId = $existing['id'] ?? null;
+                if (!$matiereId) {
+                    $matiereId = $matiereModel->create($matiereIntitule);
+                }
+                if (!$matiereId) {
+                    $_SESSION['error'] = "Impossible de créer la matière.";
                 } else {
-                    $_SESSION['error'] = "Une erreur est survenue lors de l'attribution de la matière.";
+                    $data = [
+                        'classe_id' => $classeId,
+                        'matiere_id' => $matiereId,
+                        'coefficient' => $coefficient,
+                        'credits' => $credits
+                    ];
+                    $success = $this->classeModel->assignMatiereToClass($data);
+
+                    if ($success) {
+                        $_SESSION['success'] = "Matière attribuée avec succès à la classe.";
+                    } else {
+                        $_SESSION['error'] = "Une erreur est survenue lors de l'attribution de la matière.";
+                    }
                 }
             } else {
                 $_SESSION['errors'] = $errors;
             }
         }
-        error_log("Redirection vers: " . BASE_URL . "admin/classes/modifier/" . $classeId);
-        header('Location: ' . BASE_URL . 'admin/classes/modifier/' . $classeId);
+        error_log("Redirection vers: " . BASE_URL . "admin/classes/assign-matiere/" . $classeId);
+        header('Location: ' . BASE_URL . 'admin/classes/assign-matiere/' . $classeId);
         exit();
+    }
+
+    public function assignMatiereForm($classeId) {
+        $classe = $this->classeModel->getById($classeId);
+        if (!$classe) {
+            $_SESSION['error'] = "Classe introuvable.";
+            header('Location: ' . BASE_URL . 'admin/classes');
+            exit();
+        }
+
+        $matiereModel = new Matiere($this->db);
+        $allMatieres = $matiereModel->getAll();
+        $assignedMatieres = $this->classeModel->getAssignedMatieresWithDetails($classeId);
+
+        include __DIR__ . '/../views/admin/classes/assign_matiere.php';
     }
 }
 ?>

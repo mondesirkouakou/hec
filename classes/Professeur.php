@@ -189,6 +189,15 @@ class Professeur extends User {
         ]);
     }
 
+    public function getClassesAssociees($professeurId) {
+        $sql = "SELECT DISTINCT c.* 
+                FROM classes c
+                JOIN {$this->table_affectation} a ON c.id = a.classe_id
+                WHERE a.professeur_id = :professeur_id
+                ORDER BY c.intitule";
+        return $this->db->fetchAll($sql, ['professeur_id' => $professeurId]);
+    }
+
     /**
      * Met à jour les informations d'un professeur
      * @param int $professeurId ID du professeur

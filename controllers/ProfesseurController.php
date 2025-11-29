@@ -2,10 +2,11 @@
 require_once __DIR__ . '/../classes/Professeur.php';
 
 class ProfesseurController {
+    private $professeurModel;
     private $professeur;
     
     public function __construct() {
-        $this->professeur = new Professeur();
+        $this->professeurModel = new Professeur();
         $this->checkAccess();
     }
     
@@ -20,7 +21,7 @@ class ProfesseurController {
         }
         
         // Charger les informations du professeur
-        $this->professeur = $this->professeur->getByUserId($_SESSION['user_id']);
+        $this->professeur = $this->professeurModel->getByUserId($_SESSION['user_id']);
         
         if (!$this->professeur) {
             header('HTTP/1.0 403 Forbidden');
@@ -33,11 +34,13 @@ class ProfesseurController {
      * Affiche le tableau de bord du professeur
      */
     public function dashboard() {
-        $matieres = $this->professeur->getMatieresEnseignees($this->professeur['id']);
+        $matieres = $this->professeurModel->getMatieresEnseignees($this->professeur['id']);
+        $classes = $this->professeurModel->getClassesAssociees($this->professeur['id']);
         
         return [
             'professeur' => $this->professeur,
-            'matieres' => $matieres
+            'matieres' => $matieres,
+            'classes' => $classes
         ];
     }
     
@@ -45,21 +48,21 @@ class ProfesseurController {
      * Récupère les classes pour une matière donnée
      */
     public function getClassesPourMatiere($matiereId) {
-        return $this->professeur->getClassesPourMatiere($this->professeur['id'], $matiereId);
+        return $this->professeurModel->getClassesPourMatiere($this->professeur['id'], $matiereId);
     }
     
     /**
      * Récupère les étudiants d'une classe pour une matière donnée
      */
     public function getEtudiantsPourNote($classeId, $matiereId) {
-        return $this->professeur->getEtudiantsPourNote($classeId, $matiereId);
+        return $this->professeurModel->getEtudiantsPourNote($classeId, $matiereId);
     }
     
     /**
      * Enregistre les notes des étudiants
      */
     public function enregistrerNotes($notesData) {
-        return $this->professeur->enregistrerNotes($this->professeur['id'], $notesData);
+        return $this->professeurModel->enregistrerNotes($this->professeur['id'], $notesData);
     }
     
     /**
@@ -134,12 +137,15 @@ class ProfesseurController {
      */
     public function exporterNotesCSV($matiereId, $classeId) {
         $etudiants = $this->getEtudiantsPourNote($classeId, $matiereId);
-        $matiere = $this->professeur->getMatiereById($matiereId);
-        $classe = $this->professeur->getClasseById($classeId);
+        $db = Database::getInstance();
+        $matiere = $db->fetch("SELECT * FROM matieres WHERE id = :id", ['id' => $matiereId]);
+        $classe = $db->fetch("SELECT * FROM classes WHERE id = :id", ['id' => $classeId]);
         
         // En-têtes HTTP pour forcer le téléchargement
         header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=notes_' . $matiere['code'] . '_' . $classe['code'] . '.csv');
+        $matiereCode = $matiere['code'] ?? ($matiere['intitule'] ?? 'matiere');
+        $classeCode = $classe['code'] ?? ($classe['intitule'] ?? 'classe');
+        header('Content-Disposition: attachment; filename=notes_' . $matiereCode . '_' . $classeCode . '.csv');
         
         // Création du fichier de sortie
         $output = fopen('php://output', 'w');
@@ -163,5 +169,84 @@ class ProfesseurController {
         
         fclose($output);
         exit();
+    }
+
+    public function listeClasse($classeId) {
+        $db = Database::getInstance();
+        $associe = $db->fetchColumn(
+            "SELECT COUNT(*) FROM affectation_professeur WHERE professeur_id = :pid AND classe_id = :cid",
+            ['pid' => $this->professeur['id'], 'cid' => $classeId]
+        );
+        if (!$associe) {
+            header('HTTP/1.0 403 Forbidden');
+            echo 'Accès refusé à cette classe';
+            exit();
+        }
+
+        $classe = $db->fetch("SELECT * FROM classes WHERE id = :id", ['id' => $classeId]);
+        $etudiants = $db->fetchAll(
+            "SELECT e.*, u.email, u.is_active, CONCAT(e.nom, ' ', e.prenom) as nom_complet
+             FROM etudiants e
+             JOIN users u ON e.user_id = u.id
+             JOIN inscriptions i ON e.id = i.etudiant_id
+             WHERE i.classe_id = :classe_id
+             ORDER BY e.nom, e.prenom",
+            ['classe_id' => $classeId]
+        );
+
+        return [
+            'classe' => $classe,
+            'etudiants' => $etudiants
+        ];
+    }
+
+    public function notesIndex() {
+        $matieres = $this->professeurModel->getMatieresEnseignees($this->professeur['id']);
+        $classesParMatiere = [];
+        foreach ($matieres as $m) {
+            $classesParMatiere[$m['id']] = $this->professeurModel->getClassesPourMatiere($this->professeur['id'], $m['id']);
+        }
+        return [
+            'matieres' => $matieres,
+            'classesParMatiere' => $classesParMatiere
+        ];
+    }
+
+    public function notesSaisie($classeId, $matiereId) {
+        $db = Database::getInstance();
+        $aff = $db->fetchColumn(
+            "SELECT COUNT(*) FROM affectation_professeur WHERE professeur_id = :pid AND classe_id = :cid AND matiere_id = :mid",
+            ['pid' => $this->professeur['id'], 'cid' => $classeId, 'mid' => $matiereId]
+        );
+        if (!$aff) {
+            header('HTTP/1.0 403 Forbidden');
+            echo 'Vous n\'êtes pas affecté à cette classe/matière';
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $notesData = [];
+            foreach ($_POST['notes'] ?? [] as $etudiantId => $noteVal) {
+                $notesData[] = [
+                    'etudiant_id' => (int)$etudiantId,
+                    'matiere_id' => (int)$matiereId,
+                    'note' => is_numeric($noteVal) ? floatval($noteVal) : null,
+                    'appreciation' => $_POST['appreciations'][$etudiantId] ?? null
+                ];
+            }
+            $ok = $this->professeurModel->enregistrerNotes($this->professeur['id'], $notesData);
+            $_SESSION['success'] = $ok ? 'Notes enregistrées' : 'Erreur lors de l\'enregistrement des notes';
+            header('Location: ' . BASE_URL . 'professeur/notes/' . (int)$classeId . '/' . (int)$matiereId);
+            exit();
+        }
+
+        $etudiants = $this->professeurModel->getEtudiantsPourNote($classeId, $matiereId);
+        $classe = $db->fetch("SELECT * FROM classes WHERE id = :id", ['id' => $classeId]);
+        $matiere = $db->fetch("SELECT * FROM matieres WHERE id = :id", ['id' => $matiereId]);
+        return [
+            'classe' => $classe,
+            'matiere' => $matiere,
+            'etudiants' => $etudiants
+        ];
     }
 }

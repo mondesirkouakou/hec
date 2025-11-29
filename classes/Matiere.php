@@ -18,6 +18,17 @@ class Matiere {
         return $this->db->fetch($sql, ['id' => $id]);
     }
 
+    public function getByIntitule($intitule) {
+        $sql = "SELECT * FROM {$this->table_name} WHERE LOWER(intitule) = LOWER(:intitule) LIMIT 1";
+        return $this->db->fetch($sql, ['intitule' => $intitule]);
+    }
+
+    public function create($intitule) {
+        $sql = "INSERT INTO {$this->table_name} (intitule, created_at) VALUES (:intitule, NOW())";
+        $id = $this->db->insert($sql, ['intitule' => $intitule]);
+        return $id ? (int)$id : null;
+    }
+
     public function count() {
         return (int)$this->db->fetchColumn("SELECT COUNT(*) FROM {$this->table_name}");
     }
