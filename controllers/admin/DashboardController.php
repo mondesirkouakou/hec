@@ -50,6 +50,9 @@ class DashboardController {
         
         // Récupérer les dernières classes créées
         $dernieresClasses = $this->classeModel->getLatest(5);
+
+        $classesEnAttente = $this->classeModel->getClassesEnAttenteValidation();
+        $nbListesEnAttente = is_array($classesEnAttente) ? count($classesEnAttente) : 0;
         
         // Inclure la vue du tableau de bord
         include __DIR__ . '/../../views/admin/dashboard.php';

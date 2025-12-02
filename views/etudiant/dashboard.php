@@ -20,78 +20,181 @@ ob_start();
 </div>
 
 <div class="dashboard-cards">
-    <!-- Carte des notes moyennes -->
-    <div class="dashboard-card">
+    <!-- Carte Mes notes de classe -->
+    <div class="dashboard-card" data-bs-toggle="modal" data-bs-target="#notesClasseModal" style="cursor: pointer;">
         <div class="card-icon bg-primary">
-            <i class="fas fa-chart-pie"></i>
+            <i class="fas fa-book-open"></i>
         </div>
         <div class="card-content">
-            <h3>Moyenne générale</h3>
-            <div class="average-grade">
-                <span class="grade"><?= number_format($stats['moyenne_generale'] ?? 0, 2, ',', ' ') ?></span>
-                <span class="grade-max">/ 20</span>
-                <?php if (isset($stats['evolution_moyenne'])): ?>
-                    <span class="evolution <?= $stats['evolution_moyenne'] >= 0 ? 'text-success' : 'text-danger' ?>">
-                        <i class="fas fa-arrow-<?= $stats['evolution_moyenne'] >= 0 ? 'up' : 'down' ?>"></i>
-                        <?= abs($stats['evolution_moyenne']) ?>%
-                    </span>
-                <?php endif; ?>
-            </div>
-            <p class="text-muted">Sur <?= $stats['nb_matieres'] ?? 0 ?> matière(s) évaluée(s)</p>
-        </div>
-    </div>
-    
-    
-    
-    <!-- Carte des dernières notes -->
-    <div class="dashboard-card">
-        <div class="card-icon bg-info">
-            <i class="fas fa-clipboard-check"></i>
-        </div>
-        <div class="card-content">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>Dernières notes</h3>
-                <a href="/hec/etudiant/notes" class="btn btn-sm btn-outline-primary">Voir tout</a>
-            </div>
-            
-            <?php if (!empty($dernieres_notes)): ?>
-                <ul class="recent-notes">
-                    <?php foreach ($dernieres_notes as $note): ?>
-                    <li class="note-item">
-                        <div class="note-matiere">
-                            <strong><?= htmlspecialchars($note['matiere_nom']) ?></strong>
-                            <span class="badge badge-<?= $note['valeur'] >= 10 ? 'success' : 'danger' ?>">
-                                <?= number_format($note['valeur'], 2, ',', ' ') ?>/20
-                            </span>
-                        </div>
-                        <div class="note-details">
-                            <span class="text-muted">
-                                <?= htmlspecialchars($note['type_evaluation']) ?> 
-                                (Coef. <?= $note['coefficient'] ?>)
-                            </span>
-                            <span class="note-date">
-                                <?= date('d/m/Y', strtotime($note['date_evaluation'])) ?>
-                            </span>
-                        </div>
-                        <?php if (!empty($note['appreciation'])): ?>
-                            <div class="note-appreciation">
-                                <i class="fas fa-comment"></i> 
-                                <?= htmlspecialchars($note['appreciation']) ?>
-                            </div>
-                        <?php endif; ?>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
+            <h3>Mes notes de classe</h3>
+            <?php if (!empty($notes_par_matiere)): ?>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Matière</th>
+                                <th>Note 1</th>
+                                <th>Note 2</th>
+                                <th>Note 3</th>
+                                <th>Note 4</th>
+                                <th>Note 5</th>
+                                <th>Moyenne</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($notes_par_matiere as $m): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($m['nom']) ?></td>
+                                    <td>
+                                        <?php if ($m['note1'] !== null): ?>
+                                            <?= number_format($m['note1'], 2, ',', ' ') ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($m['note2'] !== null): ?>
+                                            <?= number_format($m['note2'], 2, ',', ' ') ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($m['note3'] !== null): ?>
+                                            <?= number_format($m['note3'], 2, ',', ' ') ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($m['note4'] !== null): ?>
+                                            <?= number_format($m['note4'], 2, ',', ' ') ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($m['note5'] !== null): ?>
+                                            <?= number_format($m['note5'], 2, ',', ' ') ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <strong><?= number_format($m['moyenne'] ?? 0, 2, ',', ' ') ?></strong> / 20
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php else: ?>
-                <p class="text-muted">Aucune note enregistrée</p>
+                <p class="text-muted mt-3">Aucune note enregistrée pour le moment.</p>
             <?php endif; ?>
         </div>
     </div>
-    
+
+    <!-- Carte Bulletin -->
+    <div class="dashboard-card">
+        <div class="card-icon bg-info">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="card-content">
+            <h3>Bulletin</h3>
+            <p class="text-muted">
+                Consultez le détail de vos notes par matière et imprimez votre relevé.
+            </p>
+            <a href="<?= BASE_URL ?>etudiant/notes" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="fas fa-eye"></i> Ouvrir mes notes détaillées
+            </a>
+        </div>
+    </div>
 
 </div>
 
-
+<!-- Modal grand tableau des notes de classe -->
+<div class="modal fade" id="notesClasseModal" tabindex="-1" aria-labelledby="notesClasseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesClasseModalLabel">Mes notes de classe - Détail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <?php if (!empty($notes_par_matiere)): ?>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Matière</th>
+                                    <th>Note 1</th>
+                                    <th>Note 2</th>
+                                    <th>Note 3</th>
+                                    <th>Note 4</th>
+                                    <th>Note 5</th>
+                                    <th>Moyenne / 20</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($notes_par_matiere as $m): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($m['nom']) ?></td>
+                                        <td>
+                                            <?php if ($m['note1'] !== null): ?>
+                                                <?= number_format($m['note1'], 2, ',', ' ') ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($m['note2'] !== null): ?>
+                                                <?= number_format($m['note2'], 2, ',', ' ') ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($m['note3'] !== null): ?>
+                                                <?= number_format($m['note3'], 2, ',', ' ') ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($m['note4'] !== null): ?>
+                                                <?= number_format($m['note4'], 2, ',', ' ') ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($m['note5'] !== null): ?>
+                                                <?= number_format($m['note5'], 2, ',', ' ') ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <strong><?= number_format($m['moyenne'] ?? 0, 2, ',', ' ') ?></strong>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <p class="text-muted">Aucune note enregistrée pour le moment.</p>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <a href="<?= BASE_URL ?>etudiant/notes" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Aller à la page Mes notes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
 /* Styles spécifiques au tableau de bord */

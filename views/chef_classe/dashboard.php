@@ -8,6 +8,8 @@ $etudiants = $etudiants ?? [];
 $professeurs = $professeurs ?? [];
 $message = $_SESSION['message'] ?? '';
 unset($_SESSION['message']);
+$error = $_SESSION['error'] ?? '';
+unset($_SESSION['error']);
 
 // Vérifier si les listes ont été soumises
 $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
@@ -18,7 +20,7 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
         <h1 class="dashboard-title neon-effect">Tableau de bord Chef de Classe</h1>
         <div class="header-actions">
             <?php if (!$listeSoumise): ?>
-                <button type="button" class="btn btn-primary btn-lg ripple-effect explosive-zoom" data-toggle="modal" data-target="#soumettreModal">
+                <button type="button" class="btn btn-primary btn-lg ripple-effect explosive-zoom" data-bs-toggle="modal" data-bs-target="#soumettreModal">
                     <i class="fas fa-paper-plane"></i> Soumettre les listes
                 </button>
             <?php else: ?>
@@ -28,8 +30,12 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
     </div>
 
     <?php if ($message): ?>
-        <div class="alert alert-info animated-alert"><?= htmlspecialchars($message) ?></div>
+        <div class="alert alert-success animated-alert"><?= htmlspecialchars($message) ?></div>
     <?php endif; ?>
+    <?php if ($error): ?>
+        <div class="alert alert-danger animated-alert"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
 
     <!-- Informations de la classe -->
     <div class="card animated-card info-card rotate-3d">
@@ -146,9 +152,11 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
                                             <td><?= htmlspecialchars($p['matieres']) ?></td>
                                             <?php if (!$listeSoumise): ?>
                                                 <td>
-                                                    <button class="btn btn-sm btn-danger ripple-effect" onclick="supprimerProfesseur(<?= $p['professeur_id'] ?>, <?= $p['matiere_id'] ?>)" title="Supprimer">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
+                                                    <?php if (isset($p['professeur_id']) && isset($p['matiere_id'])): ?>
+                                                        <button class="btn btn-sm btn-danger ripple-effect" onclick="supprimerProfesseur(<?= (int)$p['professeur_id'] ?>, <?= (int)$p['matiere_id'] ?>)" title="Supprimer">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    <?php endif; ?>
                                                 </td>
                                             <?php endif; ?>
                                         </tr>
@@ -165,11 +173,11 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
 
 <!-- Modal Soumettre -->
 <div class="modal fade animated-modal" id="soumettreModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content modal-content-animated">
             <div class="modal-header modal-header-primary">
                 <h5 class="modal-title">Soumettre les listes</h5>
-                <button type="button" class="btn-close btn-close-white" data-dismiss="modal">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -181,7 +189,7 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
                 <p class="text-warning text-center"><strong>Attention :</strong> Après soumission, vous ne pourrez plus modifier les listes.</p>
             </div>
             <div class="modal-footer modal-footer-animated">
-                <button type="button" class="btn btn-secondary ripple-effect" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-secondary ripple-effect" data-bs-dismiss="modal">Annuler</button>
                 <form action="<?= BASE_URL ?>chef-classe/soumettre" method="POST">
                     <button type="submit" class="btn btn-success ripple-effect">
                         <i class="fas fa-paper-plane"></i> Soumettre
@@ -198,7 +206,7 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
         <div class="modal-content modal-content-animated">
             <div class="modal-header modal-header-secondary">
                 <h5 class="modal-title">Ajouter un étudiant</h5>
-                <button type="button" class="btn-close btn-close-white" data-dismiss="modal">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -226,7 +234,7 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
                     </div>
                 </div>
                 <div class="modal-footer modal-footer-animated">
-                    <button type="button" class="btn btn-secondary ripple-effect" data-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-secondary ripple-effect" data-bs-dismiss="modal">Annuler</button>
                     <button type="submit" class="btn btn-primary ripple-effect">
                         <i class="fas fa-plus"></i> Ajouter
                     </button>
@@ -242,7 +250,7 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
         <div class="modal-content modal-content-animated">
             <div class="modal-header modal-header-accent">
                 <h5 class="modal-title">Ajouter un professeur</h5>
-                <button type="button" class="btn-close btn-close-white" data-dismiss="modal">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>

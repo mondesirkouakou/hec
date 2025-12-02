@@ -68,8 +68,28 @@ class EtudiantController {
             'nb_matieres' => count($notes),
             'evolution_moyenne' => null
         ];
+        // Regrouper les notes par matière pour l'affichage "Mes notes de classe"
+        $notes_par_matiere = [];
+        foreach ($notes as $n) {
+            $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
+            if ($mid === 0) {
+                continue;
+            }
+            // On conserve la dernière ligne rencontrée pour chaque matière (dernier semestre saisi)
+            $notes_par_matiere[$mid] = [
+                'id' => $mid,
+                'nom' => $n['matiere_nom'] ?? '',
+                'note1' => isset($n['note1']) ? (float)$n['note1'] : null,
+                'note2' => isset($n['note2']) ? (float)$n['note2'] : null,
+                'note3' => isset($n['note3']) ? (float)$n['note3'] : null,
+                'note4' => isset($n['note4']) ? (float)$n['note4'] : null,
+                'note5' => isset($n['note5']) ? (float)$n['note5'] : null,
+                'moyenne' => isset($n['note']) ? (float)$n['note'] : null,
+            ];
+        }
+        $notes_par_matiere = array_values($notes_par_matiere);
         $etudiant = $this->etudiant;
-        return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','etudiant');
+        return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','notes_par_matiere','etudiant');
     }
 
     public function renderDashboard() {

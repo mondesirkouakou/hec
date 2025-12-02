@@ -12,6 +12,13 @@ ob_start();
         <a href="<?= BASE_URL ?>admin/classes/modifier/<?= $classe['id'] ?>" class="btn btn-warning">
             <i class="fas fa-edit"></i> Modifier
         </a>
+        <?php if (($classe['statut_listes'] ?? null) === 'en_attente'): ?>
+            <form action="<?= BASE_URL ?>admin/classes/<?= (int)$classe['id'] ?>/valider-listes" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Valider les listes
+                </button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -49,6 +56,48 @@ ob_start();
             <?php else: ?>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> Aucun étudiant n'est inscrit dans cette classe pour le moment.
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> Liste pas encore soumise.
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">Liste des professeurs</h3>
+    </div>
+    <div class="card-body">
+        <?php if (isset($classe['statut_listes']) && ($classe['statut_listes'] === 'en_attente' || $classe['statut_listes'] === 'validee')): ?>
+            <?php if (!empty($professeurs)): ?>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Email</th>
+                                <th>Matières</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($professeurs as $prof): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($prof['nom']) ?></td>
+                                    <td><?= htmlspecialchars($prof['prenom']) ?></td>
+                                    <td><?= htmlspecialchars($prof['email']) ?></td>
+                                    <td><?= htmlspecialchars($prof['matieres'] ?? '') ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Aucun professeur n'est affecté à cette classe pour le moment.
                 </div>
             <?php endif; ?>
         <?php else: ?>

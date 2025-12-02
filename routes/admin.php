@@ -90,6 +90,28 @@ switch ($path) {
                 $controller->index();
         }
         break;
+    
+    // Gestion des chefs de classe
+    case (preg_match('/^\/chefs-classe(\/.*)?$/', $path) ? true : false):
+        require_once __DIR__ . '/../controllers/ChefClasseAdminController.php';
+        $controller = new ChefClasseAdminController();
+
+        $parts = explode('/', trim($path, '/'));
+        $action = $parts[1] ?? 'index';
+
+        switch ($action) {
+            case 'actions':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $controller->actionsGroupees();
+                } else {
+                    header('Location: ' . BASE_URL . 'admin/chefs-classe');
+                    exit();
+                }
+                break;
+            default:
+                $controller->index();
+        }
+        break;
         
     // Gestion des semestres
     case (preg_match('/^\/semestres(\/.*)?$/', $path) ? true : false):
@@ -182,6 +204,15 @@ switch ($path) {
                     exit();
                 }
                 break;
+            
+            case 'valider-toutes-listes':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $controller->validerToutesLesListes();
+                } else {
+                    header('Location: ' . BASE_URL . 'admin/classes?statut_listes=en_attente');
+                    exit();
+                }
+                break;
                 
             case (is_numeric($action_segment) ? true : false): // Gère /classes/{id} ou /classes/{id}/action
                 $id = $action_segment;
@@ -217,6 +248,8 @@ switch ($path) {
                     } else {
                         $controller->designerChef($id);
                     }
+                } elseif ($sub_action === 'valider-listes' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $controller->validerListes($id);
                 } else {
                     $controller->show($id);
                 }

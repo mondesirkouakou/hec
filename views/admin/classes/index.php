@@ -1,20 +1,33 @@
 <?php
-$pageTitle = 'Gestion des classes';
+$pageTitle = (($filtreStatutListes ?? null) === 'en_attente')
+    ? 'Liste de classes en attente'
+    : 'Gestion des classes';
 ob_start();
 ?>
 
 <div class="page-header">
-    <h1><i class="fas fa-chalkboard"></i> Gestion des classes</h1>
+    <h1>
+        <i class="fas fa-chalkboard"></i>
+        <?= (($filtreStatutListes ?? null) === 'en_attente') ? 'Liste de classes en attente' : 'Gestion des classes'; ?>
+    </h1>
     <div class="page-actions">
         <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-info">
             <i class="fas fa-tachometer-alt"></i> Retour au dashboard
         </a>
-        <a href="<?= BASE_URL ?>admin/classes/nouvelle" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nouvelle classe
-        </a>
-        <button class="btn btn-secondary" data-toggle="modal" data-target="#importModal">
-            <i class="fas fa-file-import"></i> Importer
-        </button>
+        <?php if (($filtreStatutListes ?? null) === 'en_attente'): ?>
+            <form action="<?= BASE_URL ?>admin/classes/valider-toutes-listes" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Valider toutes les listes en attente ?');">
+                    <i class="fas fa-check-double"></i> Valider toutes les listes
+                </button>
+            </form>
+        <?php else: ?>
+            <a href="<?= BASE_URL ?>admin/classes/nouvelle" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nouvelle classe
+            </a>
+            <button class="btn btn-secondary" data-toggle="modal" data-target="#importModal">
+                <i class="fas fa-file-import"></i> Importer
+            </button>
+        <?php endif; ?>
     </div>
 </div>
 

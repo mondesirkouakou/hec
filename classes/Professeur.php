@@ -181,7 +181,8 @@ class Professeur extends User {
                 FROM classes c
                 JOIN {$this->table_affectation} a ON c.id = a.classe_id
                 WHERE a.professeur_id = :professeur_id 
-                AND a.matiere_id = :matiere_id";
+                AND a.matiere_id = :matiere_id
+                AND c.statut_listes = 'validee'";
                 
         return $this->db->fetchAll($sql, [
             'professeur_id' => $professeurId,
@@ -194,6 +195,7 @@ class Professeur extends User {
                 FROM classes c
                 JOIN {$this->table_affectation} a ON c.id = a.classe_id
                 WHERE a.professeur_id = :professeur_id
+                  AND c.statut_listes = 'validee'
                 ORDER BY c.intitule";
         return $this->db->fetchAll($sql, ['professeur_id' => $professeurId]);
     }
@@ -307,95 +309,114 @@ class Professeur extends User {
      * @return array Liste des étudiants avec leurs notes éventuelles
      */
     public function getEtudiantsPourNote($classeId, $matiereId) {
-        $sql = "SELECT e.id, e.matricule, e.nom, e.prenom, n.note, n.appreciation, n.statut
+        $sql = "SELECT e.id, e.matricule, e.nom, e.prenom,
+                       n.note, n.appreciation, n.statut,
+                       n.note1, n.note2, n.note3, n.note4, n.note5
                 FROM etudiants e
                 JOIN inscriptions i ON e.id = i.etudiant_id
-                LEFT JOIN notes n ON e.id = n.etudiant_id AND n.matiere_id = :matiere_id
-                WHERE i.classe_id = :classe_id
+                LEFT JOIN notes n ON e.id = n.etudiant_id
+                                  AND n.matiere_id = :matiere_id
+                                  AND n.classe_id = :classe_id
+                WHERE i.classe_id = :classe_id_join
                 ORDER BY e.nom, e.prenom";
-                
+
         return $this->db->fetchAll($sql, [
             'classe_id' => $classeId,
-            'matiere_id' => $matiereId
+            'matiere_id' => $matiereId,
+            'classe_id_join' => $classeId
         ]);
     }
 
     /**
      * Enregistre ou met à jour les notes des étudiants
-     * @param int $professeurId ID du professeur
-     * @param array $notesData Données des notes (id_etudiant, id_matiere, note, appreciation)
+     * @param int $professeurId ID du professeur (utilisé pour saisie_par)
+     * @param array $notesData Données des notes (etudiant_id, matiere_id, classe_id, semestre_id, note, appreciation)
      * @return bool True si l'enregistrement a réussi, false sinon
      */
     public function enregistrerNotes($professeurId, $notesData) {
         try {
             $this->db->beginTransaction();
-            
+
             $currentDate = date('Y-m-d H:i:s');
-            
+
             foreach ($notesData as $note) {
-                // Vérifier si une note existe déjà pour cet étudiant et cette matière
+                // Vérifier si une note existe déjà pour cet étudiant / matière / classe / semestre
                 $existingNote = $this->db->fetch(
-                    "SELECT id FROM notes WHERE etudiant_id = :etudiant_id AND matiere_id = :matiere_id",
+                    "SELECT id FROM notes 
+                     WHERE etudiant_id = :etudiant_id 
+                       AND matiere_id = :matiere_id 
+                       AND classe_id = :classe_id 
+                       AND semestre_id = :semestre_id",
                     [
                         'etudiant_id' => $note['etudiant_id'],
-                        'matiere_id' => $note['matiere_id']
+                        'matiere_id' => $note['matiere_id'],
+                        'classe_id' => $note['classe_id'],
+                        'semestre_id' => $note['semestre_id'],
                     ]
                 );
-                
+
                 if ($existingNote) {
-                    // Mise à jour de la note existante
+                    // Mise à jour de la note existante (on ne touche qu'aux champs utiles)
                     $sql = "UPDATE notes SET 
-                            note = :note, 
-                            appreciation = :appreciation,
-                            statut = :statut,
-                            modifie_par = :professeur_id,
-                            date_modification = :date_modif
+                                note = :note,
+                                note1 = :note1,
+                                note2 = :note2,
+                                note3 = :note3,
+                                note4 = :note4,
+                                note5 = :note5,
+                                appreciation = :appreciation,
+                                statut = :statut
                             WHERE id = :id";
-                    
+
                     $params = [
                         'id' => $existingNote['id'],
                         'note' => $note['note'],
+                        'note1' => $note['note1'] ?? null,
+                        'note2' => $note['note2'] ?? null,
+                        'note3' => $note['note3'] ?? null,
+                        'note4' => $note['note4'] ?? null,
+                        'note5' => $note['note5'] ?? null,
                         'appreciation' => $note['appreciation'] ?? null,
                         'statut' => 'soumis',
-                        'professeur_id' => $professeurId,
-                        'date_modif' => $currentDate
                     ];
-                    
+
                     $this->db->execute($sql, $params);
                 } else {
-                    // Insertion d'une nouvelle note
+                    // Insertion d'une nouvelle note alignée sur la structure de la table
                     $sql = "INSERT INTO notes 
-                            (etudiant_id, matiere_id, note, appreciation, statut, professeur_id, date_creation)
+                            (etudiant_id, matiere_id, classe_id, semestre_id, note, note1, note2, note3, note4, note5, appreciation, statut, saisie_par, date_saisie)
                             VALUES 
-                            (:etudiant_id, :matiere_id, :note, :appreciation, :statut, :professeur_id, :date_creation)";
-                    
+                            (:etudiant_id, :matiere_id, :classe_id, :semestre_id, :note, :note1, :note2, :note3, :note4, :note5, :appreciation, :statut, :saisie_par, :date_saisie)";
+
                     $params = [
                         'etudiant_id' => $note['etudiant_id'],
                         'matiere_id' => $note['matiere_id'],
+                        'classe_id' => $note['classe_id'],
+                        'semestre_id' => $note['semestre_id'],
                         'note' => $note['note'],
+                        'note1' => $note['note1'] ?? null,
+                        'note2' => $note['note2'] ?? null,
+                        'note3' => $note['note3'] ?? null,
+                        'note4' => $note['note4'] ?? null,
+                        'note5' => $note['note5'] ?? null,
                         'appreciation' => $note['appreciation'] ?? null,
                         'statut' => 'soumis',
-                        'professeur_id' => $professeurId,
-                        'date_creation' => $currentDate
+                        'saisie_par' => $professeurId,
+                        'date_saisie' => $currentDate,
                     ];
-                    
+
                     $this->db->insert($sql, $params);
                 }
             }
-            
+
             $this->db->commit();
             return true;
-            
+
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log("Erreur enregistrement notes: " . $e->getMessage());
             return false;
         }
-    }
-    
-    // Getters et Setters pour les propriétés spécifiques
-    public function getTelephone() {
-        return $this->telephone;
     }
 
     public function setTelephone($telephone) {

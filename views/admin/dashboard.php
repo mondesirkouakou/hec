@@ -73,16 +73,18 @@ ob_start();
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card animated-card warning-card rotate-3d magnetic-effect">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Listes en attente</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">3</div>
+                    <a href="<?= BASE_URL ?>admin/classes?statut_listes=en_attente" class="text-reset text-decoration-none d-block">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Listes de classes en attente</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?= isset($nbListesEnAttente) ? (int)$nbListesEnAttente : 0 ?></div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -113,7 +115,13 @@ ob_start();
                         <div class="col-md-6 mb-3">
                             <a href="<?= BASE_URL ?>admin/classes" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
                                 <i class="fas fa-user-plus text-info mr-2"></i>
-                                Gérer les chefs de classe
+                                Gérer les classes
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="<?= BASE_URL ?>admin/chefs-classe" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
+                                <i class="fas fa-user-tie text-warning mr-2"></i>
+                                Gérer chef de classe
                             </a>
                         </div>
                         <div class="col-md-6 mb-3">

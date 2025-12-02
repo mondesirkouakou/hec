@@ -226,16 +226,80 @@ class ProfesseurController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notesData = [];
-            foreach ($_POST['notes'] ?? [] as $etudiantId => $noteVal) {
+            $postedAvg = $_POST['notes'] ?? [];
+            $appreciations = $_POST['appreciations'] ?? [];
+            $postNotes = [
+                1 => $_POST['note1'] ?? [],
+                2 => $_POST['note2'] ?? [],
+                3 => $_POST['note3'] ?? [],
+                4 => $_POST['note4'] ?? [],
+                5 => $_POST['note5'] ?? [],
+            ];
+
+            // Rassembler la liste des étudiants présents dans au moins un tableau
+            $idsAssoc = [];
+            foreach ($postNotes as $arr) {
+                if (is_array($arr)) {
+                    foreach ($arr as $sid => $_) { $idsAssoc[$sid] = true; }
+                }
+            }
+            if (is_array($postedAvg)) { foreach ($postedAvg as $sid => $_) { $idsAssoc[$sid] = true; } }
+            if (is_array($appreciations)) { foreach ($appreciations as $sid => $_) { $idsAssoc[$sid] = true; } }
+
+            foreach (array_keys($idsAssoc) as $etudiantId) {
+                $vals = [];
+                for ($i = 1; $i <= 5; $i++) {
+                    $v = $postNotes[$i][$etudiantId] ?? null;
+                    if (is_string($v)) { $v = trim($v); }
+                    if ($v === '' || $v === null || !is_numeric($v)) { $vals[$i] = null; continue; }
+                    $f = (float)$v;
+                    if ($f < 0 || $f > 20) { $vals[$i] = null; continue; }
+                    $vals[$i] = $f;
+                }
+
+                // Calcul de la moyenne sur les valeurs valides
+                $valids = array_values(array_filter($vals, function ($x) { return $x !== null; }));
+                $avg = null;
+                if (count($valids) > 0) {
+                    $avg = array_sum($valids) / count($valids);
+                } else {
+                    $p = $postedAvg[$etudiantId] ?? null;
+                    if (is_string($p)) { $p = trim($p); }
+                    if ($p !== '' && $p !== null && is_numeric($p)) {
+                        $pf = (float)$p;
+                        if ($pf >= 0 && $pf <= 20) { $avg = $pf; }
+                    }
+                }
+                if ($avg === null) { continue; }
+
                 $notesData[] = [
                     'etudiant_id' => (int)$etudiantId,
                     'matiere_id' => (int)$matiereId,
-                    'note' => is_numeric($noteVal) ? floatval($noteVal) : null,
-                    'appreciation' => $_POST['appreciations'][$etudiantId] ?? null
+                    'classe_id' => (int)$classeId,
+                    // TODO: ajuster si vous gérez plusieurs semestres; 1 est un placeholder
+                    'semestre_id' => 1,
+                    'note' => round($avg, 2),
+                    'note1' => $vals[1],
+                    'note2' => $vals[2],
+                    'note3' => $vals[3],
+                    'note4' => $vals[4],
+                    'note5' => $vals[5],
+                    'appreciation' => $appreciations[$etudiantId] ?? null
                 ];
             }
+
+            if (empty($notesData)) {
+                $_SESSION["error"] = 'Aucune note valide à enregistrer.';
+                header('Location: ' . BASE_URL . 'professeur/notes/' . (int)$classeId . '/' . (int)$matiereId);
+                exit();
+            }
+
             $ok = $this->professeurModel->enregistrerNotes($this->professeur['id'], $notesData);
-            $_SESSION['success'] = $ok ? 'Notes enregistrées' : 'Erreur lors de l\'enregistrement des notes';
+            if ($ok) {
+                $_SESSION['success'] = 'Notes enregistrées';
+            } else {
+                $_SESSION['error'] = 'Erreur lors de l\'enregistrement des notes';
+            }
             header('Location: ' . BASE_URL . 'professeur/notes/' . (int)$classeId . '/' . (int)$matiereId);
             exit();
         }

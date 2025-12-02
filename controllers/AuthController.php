@@ -45,6 +45,19 @@ class AuthController {
             $username = isset($_POST['username']) ? trim($_POST['username']) : '';
             $password = isset($_POST['password']) ? trim($_POST['password']) : '';
             
+            // Vérifier d'abord si le compte existe mais est désactivé
+            $db = Database::getInstance();
+            $existingUser = $db->fetch(
+                "SELECT id, is_active FROM users WHERE username = :u OR email = :e LIMIT 1",
+                ['u' => $username, 'e' => $username]
+            );
+
+            if ($existingUser && (int)$existingUser['is_active'] === 0) {
+                $_SESSION['error'] = "Compte désactivé";
+                $this->showLoginForm();
+                return;
+            }
+
             if ($this->user->login($username, $password)) {
                 if (!empty($_SESSION['force_password_change'])) {
                     header('Location: ' . BASE_URL . 'change-password');

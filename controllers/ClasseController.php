@@ -20,7 +20,12 @@ class ClasseController {
      * Affiche la liste des classes
      */
     public function index() {
-        $classes = $this->classeModel->getAllClasses();
+        $filtreStatutListes = $_GET['statut_listes'] ?? null;
+        if ($filtreStatutListes === 'en_attente') {
+            $classes = $this->classeModel->getClassesEnAttenteValidation();
+        } else {
+            $classes = $this->classeModel->getAllClasses();
+        }
         include __DIR__ . '/../views/admin/classes/index.php';
     }
     
@@ -169,6 +174,34 @@ class ClasseController {
         }
         
         header('Location: ' . BASE_URL . 'admin/classes');
+        exit();
+    }
+
+    public function validerListes($classeId) {
+        $admin = new Admin();
+        $ok = $admin->validerListesClasse($classeId);
+        if ($ok) {
+            $_SESSION['success'] = "Les listes de cette classe ont été validées.";
+        } else {
+            if (empty($_SESSION['error'])) {
+                $_SESSION['error'] = "Erreur lors de la validation des listes.";
+            }
+        }
+        header('Location: ' . BASE_URL . 'admin/classes/' . (int)$classeId);
+        exit();
+    }
+    
+    public function validerToutesLesListes() {
+        $admin = new Admin();
+        $ok = $admin->validerToutesLesListesEnAttente();
+        if ($ok) {
+            $_SESSION['success'] = "Toutes les listes en attente ont été validées.";
+        } else {
+            if (empty($_SESSION['error'])) {
+                $_SESSION['error'] = "Erreur lors de la validation des listes en attente.";
+            }
+        }
+        header('Location: ' . BASE_URL . 'admin/classes?statut_listes=en_attente');
         exit();
     }
     

@@ -339,16 +339,136 @@ class Admin extends User {
      */
     public function validerListesClasse($classeId) {
         try {
-            // Cette méthode marque simplement les listes comme validées
-            // La logique de validation réelle doit être implémentée selon les besoins
-            
-            // Ici, on pourrait ajouter des vérifications supplémentaires
-            // comme s'assurer que tous les champs requis sont remplis, etc.
-            
+            $this->db->execute(
+                "UPDATE {$this->table_classes} 
+                 SET statut_listes = 'validee' 
+                 WHERE id = :id AND statut_listes = 'en_attente'",
+                ['id' => $classeId]
+            );
+
             return true;
             
         } catch (Exception $e) {
             error_log("Erreur validation listes de classe: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Valide en une seule opération toutes les listes de classes actuellement en attente
+     * @return bool True si la validation a réussi, false sinon
+     */
+    public function validerToutesLesListesEnAttente() {
+        try {
+            $this->db->execute(
+                "UPDATE {$this->table_classes} 
+                 SET statut_listes = 'validee' 
+                 WHERE statut_listes = 'en_attente'"
+            );
+            return true;
+        } catch (Exception $e) {
+            error_log("Erreur validation de toutes les listes de classes en attente: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Récupère la liste des chefs de classe avec leurs comptes utilisateurs
+     * @return array
+     */
+    public function getChefsClasseAvecComptes() {
+        $sql = "SELECT cc.id AS chef_classe_id,
+                       cc.date_nomination,
+                       c.id AS classe_id,
+                       c.code AS classe_code,
+                       c.intitule AS classe_intitule,
+                       e.id AS etudiant_id,
+                       e.matricule,
+                       e.nom,
+                       e.prenom,
+                       u.id AS user_id,
+                       u.email,
+                       u.is_active
+                FROM {$this->table_chef_classe} cc
+                JOIN {$this->table_etudiants} e ON cc.etudiant_id = e.id
+                JOIN {$this->table_classes} c ON cc.classe_id = c.id
+                JOIN users u ON e.user_id = u.id
+                ORDER BY c.code, e.nom, e.prenom";
+        return $this->db->fetchAll($sql);
+    }
+
+    /**
+     * Active ou désactive en masse des comptes chef de classe
+     * @param int[] $userIds
+     * @param bool $isActive
+     * @return bool
+     */
+    public function changerStatutChefsClasse(array $userIds, $isActive) {
+        if (empty($userIds)) {
+            return false;
+        }
+        try {
+            foreach ($userIds as $userId) {
+                $this->db->execute(
+                    "UPDATE users SET is_active = :is_active WHERE id = :id",
+                    [
+                        'is_active' => $isActive ? 1 : 0,
+                        'id' => (int)$userId
+                    ]
+                );
+            }
+            return true;
+        } catch (Exception $e) {
+            error_log("Erreur changement de statut des chefs de classe: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Supprime les droits chef de classe et désactive les comptes sélectionnés
+     * @param int[] $userIds
+     * @return bool
+     */
+    public function supprimerChefsClasse(array $userIds) {
+        if (empty($userIds)) {
+            return false;
+        }
+        try {
+            $this->db->beginTransaction();
+            foreach ($userIds as $userId) {
+                $userId = (int)$userId;
+
+                // Récupérer l'étudiant lié à ce compte
+                $etudiant = $this->db->fetch(
+                    "SELECT id FROM {$this->table_etudiants} WHERE user_id = :user_id",
+                    ['user_id' => $userId]
+                );
+
+                if ($etudiant) {
+                    // Supprimer la désignation de chef de classe
+                    $this->db->execute(
+                        "DELETE FROM {$this->table_chef_classe} WHERE etudiant_id = :etudiant_id",
+                        ['etudiant_id' => $etudiant['id']]
+                    );
+
+                    // Détacher le compte utilisateur de l'étudiant
+                    $this->db->execute(
+                        "UPDATE {$this->table_etudiants} SET user_id = NULL WHERE id = :etudiant_id",
+                        ['etudiant_id' => $etudiant['id']]
+                    );
+                }
+
+                // Supprimer complètement le compte utilisateur
+                $this->db->execute(
+                    "DELETE FROM users WHERE id = :id",
+                    ['id' => $userId]
+                );
+            }
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Erreur suppression des chefs de classe: " . $e->getMessage());
             return false;
         }
     }

@@ -26,6 +26,22 @@ class Classe {
         return $this->db->fetchAll($query);
     }
 
+    public function getClassesEnAttenteValidation() {
+        $query = "SELECT c.*, a.annee_debut, a.annee_fin,
+                         COUNT(DISTINCT i.etudiant_id) AS effectif,
+                         CONCAT(e_chef.nom, ' ', e_chef.prenom) AS chef_classe_nom,
+                         c.statut_listes
+                  FROM {$this->table_name} c
+                  LEFT JOIN annees_universitaires a ON c.annee_universitaire_id = a.id
+                  LEFT JOIN inscriptions i ON c.id = i.classe_id
+                  LEFT JOIN chef_classe cc ON c.id = cc.classe_id
+                  LEFT JOIN etudiants e_chef ON cc.etudiant_id = e_chef.id
+                  WHERE c.statut_listes = 'en_attente'
+                  GROUP BY c.id
+                  ORDER BY c.code, a.annee_debut DESC";
+        return $this->db->fetchAll($query);
+    }
+
     public function count() {
         return (int)$this->db->fetchColumn("SELECT COUNT(*) FROM {$this->table_name}");
     }

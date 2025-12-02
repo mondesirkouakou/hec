@@ -163,7 +163,9 @@ class ChefClasseController {
             if ($resultat) {
                 $_SESSION['message'] = 'Listes soumises avec succès pour validation';
             } else {
-                $_SESSION['error'] = 'Erreur lors de la soumission des listes';
+                if (empty($_SESSION['error'])) {
+                    $_SESSION['error'] = 'Erreur lors de la soumission des listes';
+                }
             }
             
             header('Location: ' . BASE_URL . 'chef-classe/dashboard');

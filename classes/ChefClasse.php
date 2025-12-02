@@ -119,9 +119,11 @@ class ChefClasse extends User {
             return [];
         }
         
-        $sql = "SELECT DISTINCT p.*, u.email, 
+        $sql = "SELECT p.*, u.email, 
                        GROUP_CONCAT(m.intitule SEPARATOR ', ') as matieres,
-                       CONCAT(p.nom, ' ', p.prenom) as nom_complet
+                       CONCAT(p.nom, ' ', p.prenom) as nom_complet,
+                       p.id AS professeur_id,
+                       MIN(a.matiere_id) AS matiere_id
                 FROM {$this->table_professeurs} p
                 JOIN users u ON p.user_id = u.id
                 JOIN {$this->table_affectation} a ON p.id = a.professeur_id
@@ -446,8 +448,7 @@ class ChefClasse extends User {
             // Marquer la classe comme prête pour validation
             $this->db->execute(
                 "UPDATE {$this->table_classes} 
-                 SET statut_listes = 'en_attente',
-                     date_soumission = NOW()
+                 SET statut_listes = 'en_attente'
                  WHERE id = :id",
                 ['id' => $this->classe_id]
             );
@@ -456,6 +457,9 @@ class ChefClasse extends User {
             
         } catch (Exception $e) {
             error_log("Erreur soumission des listes: " . $e->getMessage());
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['error'] = $e->getMessage();
+            }
             return false;
         }
     }

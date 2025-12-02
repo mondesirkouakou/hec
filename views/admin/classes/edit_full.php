@@ -125,6 +125,18 @@ ob_start();
         </div>
     </div>
 
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Chef de classe</h6>
+        </div>
+        <div class="card-body">
+            <p class="mb-2">Vous pouvez créer le compte du chef de classe pour cette classe.</p>
+            <a href="<?= BASE_URL ?>admin/classes/<?= (int)$classe['id'] ?>/designer-chef" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-user-plus"></i> Créer / gérer le chef de classe
+            </a>
+        </div>
+    </div>
+
     <!-- Section Gestion des matières, coefficients et crédits -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">

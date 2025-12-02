@@ -146,29 +146,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-header">Notes pour la matière: <?php echo htmlspecialchars($matiereManager->getMatiereById($selected_matiere_id)['nom_matiere']); ?> et la classe: <?php echo htmlspecialchars($classeManager->getClasseById($selected_classe_id)['nom_classe']); ?> (Semestre: <?php echo htmlspecialchars($semestreManager->getSemestreById($selected_semestre_id)['nom_semestre']); ?>)</div>
         <div class="card-body">
             <?php if (!empty($etudiants_classe)): ?>
-                <form action="" method="POST">
+                <form action="" method="POST" id="notes-form">
+
                     <input type="hidden" name="action" value="save_notes">
                     <input type="hidden" name="matiere_id" value="<?php echo $selected_matiere_id; ?>">
                     <input type="hidden" name="classe_id" value="<?php echo $selected_classe_id; ?>">
                     <input type="hidden" name="semestre_id" value="<?php echo $selected_semestre_id; ?>">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered" id="notes-table">
                         <thead>
-                            <tr>
+                            <tr id="notes-header-row">
                                 <th>Étudiant</th>
-                                <th>Note (0-20)</th>
-                                <th>Coefficient</th>
+                                <th class="note-col">Note 1</th>
+                                <th class="note-col">Note 2</th>
+                                <th class="note-col">Note 3</th>
+                                <th id="th-add"><button type="button" id="add-note-col" class="btn btn-sm btn-outline-primary">+</button></th>
+                                <th>Moyenne</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="notes-tbody">
                             <?php foreach ($etudiants_classe as $etudiant): ?>
-                                <tr>
+                                <tr class="student-row" data-student-id="<?php echo $etudiant['id_utilisateur']; ?>">
                                     <td><?php echo htmlspecialchars($etudiant['nom'] . ' ' . $etudiant['prenom']); ?></td>
                                     <td>
                                         <input type="hidden" name="notes[<?php echo $etudiant['id_utilisateur']; ?>][id_note]" value="<?php echo $etudiant['id_note']; ?>">
-                                        <input type="number" step="0.01" class="form-control" name="notes[<?php echo $etudiant['id_utilisateur']; ?>][note_valeur]" value="<?php echo htmlspecialchars($etudiant['note_valeur']); ?>" min="0" max="20">
+                                        <input type="number" step="0.01" class="form-control note-input" value="<?php echo htmlspecialchars($etudiant['note_valeur']); ?>" min="0" max="20">
                                     </td>
                                     <td>
-                                        <input type="number" step="0.1" class="form-control" name="notes[<?php echo $etudiant['id_utilisateur']; ?>][coefficient]" value="<?php echo htmlspecialchars($etudiant['coefficient']); ?>" min="0.1">
+                                        <input type="number" step="0.01" class="form-control note-input" min="0" max="20">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" class="form-control note-input" min="0" max="20">
+                                    </td>
+                                    <td class="add-placeholder"></td>
+                                    <td>
+                                        <span class="avg-display"></span>
+                                        <input type="hidden" class="avg-input" name="notes[<?php echo $etudiant['id_utilisateur']; ?>][note_valeur]" value="<?php echo htmlspecialchars($etudiant['note_valeur']); ?>">
+                                        <input type="hidden" class="coef-input" name="notes[<?php echo $etudiant['id_utilisateur']; ?>][coefficient]" value="<?php echo htmlspecialchars($etudiant['coefficient'] !== '' ? $etudiant['coefficient'] : 1); ?>">
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -176,11 +189,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </table>
                     <button type="submit" class="btn btn-success">Enregistrer les notes</button>
                 </form>
+
             <?php else: ?>
                 <p>Aucun étudiant trouvé pour cette classe.</p>
             <?php endif; ?>
         </div>
     </div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var headerRow = document.getElementById('notes-header-row');
+  var addBtn = document.getElementById('add-note-col');
+  var tbody = document.getElementById('notes-tbody');
+  var form = document.getElementById('notes-form');
+  if (!headerRow || !addBtn || !tbody || !form) return;
+
+  function noteColsCount() {
+    return headerRow.querySelectorAll('th.note-col').length;
+  }
+
+  function computeRowAverage(tr) {
+    var inputs = tr.querySelectorAll('input.note-input');
+    var sum = 0, count = 0;
+    inputs.forEach(function (inp) {
+      var v = parseFloat(inp.value);
+      if (!isNaN(v) && v >= 0 && v <= 20) { sum += v; count += 1; }
+    });
+    var avgSpan = tr.querySelector('.avg-display');
+    var avgInput = tr.querySelector('.avg-input');
+    if (count > 0) {
+      var avg = (sum / count);
+      avgSpan.textContent = avg.toFixed(2);
+      avgInput.value = avg.toFixed(2);
+    } else {
+      avgSpan.textContent = '';
+      avgInput.value = '';
+    }
+  }
+
+  function attachInputListeners(scope) {
+    (scope || document).querySelectorAll('input.note-input').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        var tr = inp.closest('tr');
+        if (tr) computeRowAverage(tr);
+      });
+    });
+  }
+
+  function addNoteColumn() {
+    var nextIndex = noteColsCount() + 1;
+    var th = document.createElement('th');
+    th.className = 'note-col';
+    th.textContent = 'Note ' + nextIndex;
+    var addTh = document.getElementById('th-add');
+    headerRow.insertBefore(th, addTh);
+
+    tbody.querySelectorAll('tr.student-row').forEach(function (tr) {
+      var td = document.createElement('td');
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.01';
+      input.min = '0';
+      input.max = '20';
+      input.className = 'form-control note-input';
+      td.appendChild(input);
+      var addPlaceholder = tr.querySelector('td.add-placeholder');
+      tr.insertBefore(td, addPlaceholder);
+    });
+
+    attachInputListeners(tbody);
+  }
+
+  addBtn.addEventListener('click', addNoteColumn);
+  attachInputListeners(document);
+  tbody.querySelectorAll('tr.student-row').forEach(computeRowAverage);
+
+  form.addEventListener('submit', function () {
+    tbody.querySelectorAll('tr.student-row').forEach(function (tr) {
+      computeRowAverage(tr);
+      var avgInput = tr.querySelector('.avg-input');
+      var namedInputs = tr.querySelectorAll("input[name^='notes[']");
+      if (!avgInput.value) {
+        namedInputs.forEach(function (inp) { inp.disabled = true; });
+      } else {
+        namedInputs.forEach(function (inp) { inp.disabled = false; });
+      }
+    });
+  });
+});
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
