@@ -4,16 +4,115 @@ ob_start();
 ?>
 
 <div class="container-fluid admin-dashboard">
-    <div class="dashboard-header animated-header">
-        <h1 class="dashboard-title">Tableau de bord Administrateur</h1>
-        <div class="header-actions">
-            <select id="anneeUniversitaire" class="form-control form-control-animated mr-2">
-                <option value="2025-2026" selected>2025-2026</option>
-                <option value="2024-2025">2024-2025</option>
-            </select>
-            <button class="btn btn-primary ripple-effect explosive-zoom">
-                <i class="fas fa-plus"></i> Nouvelle année
-            </button>
+    <div class="dashboard-header animated-header mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h1 class="dashboard-title mb-0">Tableau de bord Administrateur</h1>
+        </div>
+
+        <!-- Années universitaires en boutons (timeline continue) -->
+        <div class="d-flex flex-nowrap align-items-center mb-2 year-strip overflow-auto">
+            <?php
+            $currentYear = (int)date('Y');
+            $yearsSource = !empty($anneeTimeline) ? $anneeTimeline : (array)$annees;
+            if (!empty($yearsSource)):
+                foreach ($yearsSource as $item):
+                    // Si on vient directement de $annees (fallback), on normalise
+                    if (isset($item['annee_debut']) && isset($item['annee_fin']) && !isset($item['exists'])) {
+                        $item = [
+                            'annee_debut' => $item['annee_debut'],
+                            'annee_fin'   => $item['annee_fin'],
+                            'exists'      => true,
+                            'record'      => $item,
+                        ];
+                    }
+
+                    $debut = (int)$item['annee_debut'];
+                    $fin   = (int)$item['annee_fin'];
+                    $label = $debut . '-' . $fin;
+                    $exists = !empty($item['exists']);
+                    $record = $exists ? $item['record'] : null;
+
+                    $activeDebut = isset($anneeActive['annee_debut']) ? (int)$anneeActive['annee_debut'] : null;
+                    $isActive = $exists && isset($anneeActive['id']) && (int)$anneeActive['id'] === (int)$record['id'];
+                    $isSelected = $exists && isset($selectedAnneeId) && (int)$selectedAnneeId === (int)$record['id'];
+
+                    // Couleur selon la position par rapport à l'année active
+                    if ($isActive) {
+                        $btnClass = 'btn-success'; // année en cours (active)
+                    } elseif ($activeDebut !== null) {
+                        if ($fin <= $activeDebut) {
+                            $btnClass = 'btn-danger'; // années déjà passées/fermées
+                        } elseif ($debut > $activeDebut) {
+                            $btnClass = 'btn-info';   // années futures (non encore ouvertes)
+                        } else {
+                            $btnClass = 'btn-secondary';
+                        }
+                    } else {
+                        // Fallback si aucune année active définie : basé sur l'année courante
+                        if ($fin < $currentYear) {
+                            $btnClass = 'btn-danger';
+                        } elseif ($debut > $currentYear) {
+                            $btnClass = 'btn-info';
+                        } else {
+                            $btnClass = 'btn-secondary';
+                        }
+                    }
+
+                    if ($isSelected) {
+                        $btnClass .= ' active';
+                    }
+
+                    if ($exists && isset($record['id'])) {
+                        // Année réellement présente en base : sélectionnable
+                        $href = BASE_URL . 'admin/dashboard?annee_id=' . (int)$record['id'];
+                    } else {
+                        // Année future non encore créée : affichée mais non cliquable depuis le dashboard
+                        $href = '#';
+                        $btnClass .= ' disabled-year';
+                    }
+            ?>
+                    <a href="<?= htmlspecialchars($href) ?>" class="btn btn-sm <?= $btnClass ?> mr-2 year-pill">
+                        <?= htmlspecialchars($label) ?>
+                    </a>
+            <?php
+                endforeach;
+            endif;
+            ?>
+        </div>
+
+        <!-- Semestres en boutons pour l'année sélectionnée -->
+        <div class="d-flex flex-wrap align-items-center">
+            <?php if (!empty($semestresAnnee)): ?>
+                <?php foreach ($semestresAnnee as $sem):
+                    $isSemActive = ($sem['est_ouvert'] ?? 0) == 1;
+                    $isSemClosed = ($sem['est_cloture'] ?? 0) == 1;
+                    $isSelectedSem = isset($selectedSemestreId) && (int)$selectedSemestreId === (int)$sem['id'];
+
+                    $btnClass = 'btn-sm mr-2 mb-2 ';
+                    $icon = '';
+
+                    if ($isSemActive) {
+                        $btnClass .= 'btn-primary'; // semestre en cours
+                    } elseif ($isSemClosed) {
+                        $btnClass .= 'btn-danger';
+                        $icon = '<i class="fas fa-lock"></i> ';
+                    } else {
+                        // Semestre fermé / non ouvert
+                        $btnClass .= 'btn-danger';
+                        $icon = '<i class="fas fa-lock-open"></i> ';
+                    }
+
+                    if ($isSelectedSem) {
+                        $btnClass .= ' active';
+                    }
+                ?>
+                    <a href="<?= BASE_URL ?>admin/dashboard?annee_id=<?= (int)$sem['annee_universitaire_id'] ?>&semestre_id=<?= (int)$sem['id'] ?>" class="btn <?= $btnClass ?> sem-pill">
+                        <?= $icon ?>Semestre <?= (int)$sem['numero'] ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <span class="text-muted">Aucun semestre défini pour cette année.</span>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -101,12 +200,6 @@ ob_start();
                 <div class="card-body card-body-animated">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <a href="<?= BASE_URL ?>admin/annees-universitaires/nouvelle" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
-                                <i class="fas fa-calendar-plus text-primary mr-2"></i>
-                                Créer une année universitaire
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
                             <a href="<?= BASE_URL ?>admin/classes/nouvelle" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
                                 <i class="fas fa-plus-circle text-success mr-2"></i>
                                 Ajouter une classe
@@ -192,7 +285,15 @@ ob_start();
     <!-- Liste des classes -->
     <div class="card animated-card classes-card">
         <div class="card-header card-header-secondary d-flex justify-content-between align-items-center">
-            <h6 class="card-title">Liste des classes (2025-2026)</h6>
+            <?php
+                $labelAnneeClasses = '—';
+                if (!empty($selectedAnnee)) {
+                    $labelAnneeClasses = ($selectedAnnee['annee_debut'] ?? '') . '-' . ($selectedAnnee['annee_fin'] ?? '');
+                } elseif (!empty($anneeActive)) {
+                    $labelAnneeClasses = ($anneeActive['annee_debut'] ?? '') . '-' . ($anneeActive['annee_fin'] ?? '');
+                }
+            ?>
+            <h6 class="card-title">Liste des classes (<?= htmlspecialchars($labelAnneeClasses) ?>)</h6>
             <div>
                 <button class="btn btn-sm btn-primary ripple-effect explosive-zoom">
                     <i class="fas fa-download fa-sm"></i> Exporter
@@ -212,54 +313,176 @@ ob_start();
                         </tr>
                     </thead>
                     <tbody>
+                    <?php if (!empty($classesDashboard)): ?>
+                        <?php foreach ($classesDashboard as $classe): ?>
+                            <tr>
+                                <td>
+                                    <strong><?= htmlspecialchars($classe['intitule'] ?? '') ?></strong>
+                                    <?php if (!empty($classe['code'])): ?>
+                                        <br><small class="text-muted"><?= htmlspecialchars($classe['code']) ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($classe['chef_classe_nom'])): ?>
+                                        <?= htmlspecialchars($classe['chef_classe_nom']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Non assigné</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (isset($classe['statut_listes']) && in_array($classe['statut_listes'], ['en_attente', 'validee'], true)): ?>
+                                        <?= (int)($classe['effectif'] ?? 0) ?> étudiants
+                                    <?php else: ?>
+                                        <span class="text-muted">Non soumises</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php $statutListes = $classe['statut_listes'] ?? null; ?>
+                                    <?php if ($statutListes === 'validee'): ?>
+                                        <span class="badge badge-success">Validée</span>
+                                    <?php elseif ($statutListes === 'en_attente'): ?>
+                                        <span class="badge badge-warning">En attente</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-secondary">Non soumise</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="<?= BASE_URL ?>admin/classes/<?= (int)$classe['id'] ?>" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
                         <tr>
-                            <td>IDA1</td>
-                            <td>N'Guessan Auguste</td>
-                            <td>45</td>
-                            <td><span class="badge badge-success">Validée</span></td>
-                            <td>
-                                <a href="<?= BASE_URL ?>admin/classes/IDA1" class="btn btn-sm btn-info ripple-effect">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="<?= BASE_URL ?>admin/notes/validation" class="btn btn-sm btn-success ripple-effect">
-                                    <i class="fas fa-check"></i> Valider
-                                </a>
-                            </td>
+                            <td colspan="5" class="text-center text-muted">Aucune classe pour l'année active.</td>
                         </tr>
-                        <tr>
-                            <td>IDA2</td>
-                            <td>Kouassi Amani</td>
-                            <td>42</td>
-                            <td><span class="badge badge-success">Validée</span></td>
-                            <td>
-                                <a href="<?= BASE_URL ?>admin/classes/IDA2" class="btn btn-sm btn-info">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="<?= BASE_URL ?>admin/notes/validation" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check"></i> Valider
-                                </a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>IDA3</td>
-                            <td>Yao Kouamé</td>
-                            <td>38</td>
-                            <td><span class="badge badge-warning">En attente</span></td>
-                            <td>
-                                <a href="<?= BASE_URL ?>admin/classes/IDA3" class="btn btn-sm btn-info">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <button class="btn btn-sm btn-secondary" disabled>
-                                    <i class="fas fa-check"></i> Valider
-                                </button>
-                            </td>
-                        </tr>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <!-- Gestion des semestres (ouverture / fermeture directement depuis le dashboard) -->
+    <div class="card animated-card mt-4">
+        <div class="card-header card-header-secondary d-flex justify-content-between align-items-center">
+            <h6 class="card-title mb-0">Gestion des semestres de l'année sélectionnée</h6>
+            <?php if (!empty($semestreActif)): ?>
+                <span class="badge badge-primary">Semestre actif : Semestre <?= (int)$semestreActif['numero'] ?></span>
+            <?php else: ?>
+                <span class="badge badge-secondary">Aucun semestre actif</span>
+            <?php endif; ?>
+        </div>
+        <div class="card-body card-body-animated">
+            <?php if (!empty($semestresAnnee)): ?>
+                <div class="row">
+                    <?php foreach ($semestresAnnee as $sem): ?>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                <div>
+                                    <div><strong>Semestre <?= (int)$sem['numero'] ?></strong></div>
+                                    <div class="small text-muted">
+                                        <?php if (($sem['est_ouvert'] ?? 0) == 1): ?>
+                                            Actuellement <span class="text-primary">ouvert</span>
+                                        <?php elseif (($sem['est_cloture'] ?? 0) == 1): ?>
+                                            <span class="text-danger">Clôturé</span>
+                                        <?php else: ?>
+                                            <span class="text-muted">Non ouvert</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <?php if (($sem['est_ouvert'] ?? 0) == 1): ?>
+                                        <!-- Bouton pour fermer le semestre ouvert -->
+                                        <a href="<?= BASE_URL ?>admin/semestres/<?= (int)$sem['id'] ?>/cloturer" class="btn btn-sm btn-danger" onclick="return confirm('Clôturer ce semestre ?');">
+                                            <i class="fas fa-lock"></i> Clôturer
+                                        </a>
+                                    <?php elseif (($sem['est_cloture'] ?? 0) == 1): ?>
+                                        <!-- Semestre déjà clôturé : pas de réouverture depuis le dashboard -->
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                                            <i class="fas fa-check"></i> Clôturé
+                                        </button>
+                                    <?php else: ?>
+                                        <!-- Bouton pour ouvrir un semestre non encore ouvert -->
+                                        <a href="<?= BASE_URL ?>admin/semestres/<?= (int)$sem['id'] ?>/activer" class="btn btn-sm btn-success" onclick="return confirm('Ouvrir ce semestre ?');">
+                                            <i class="fas fa-unlock"></i> Ouvrir
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <p class="text-muted mb-0">Aucun semestre n'est défini pour l'année sélectionnée. Utilisez la gestion des semestres pour les créer.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php if (!empty($tousSemestresClotures) && !empty($selectedAnneeId)): ?>
+    <!-- Modal clôture d'année universitaire et création de la suivante -->
+    <div class="modal fade" id="closeYearModal" tabindex="-1" role="dialog" aria-labelledby="closeYearModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="closeYearModalLabel">Clôturer l'année universitaire</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Fermer">
+                        <span aria-hidden="true">×</span>
+                <h5 class="modal-title" id="closeYearModalLabel">Clôturer l'année universitaire</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Fermer">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Les deux semestres de l'année sélectionnée sont <strong>clôturés</strong>.<br>
+                    En confirmant, vous allez :
+                </p>
+                <ul>
+                    <li>Clôturer l'année universitaire actuelle ;</li>
+                    <li>Ouvrir automatiquement la nouvelle année (avec les classes et leurs matières reconduites, sans étudiants) ;</li>
+                    <li>Réinitialiser les chefs de classe pour la nouvelle année.</li>
+                </ul>
+                <p class="mb-0">Souhaitez-vous continuer&nbsp;?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
+                <form method="POST" action="<?= BASE_URL ?>admin/annees-universitaires/<?= (int)$selectedAnneeId ?>/cloturer-et-creer" class="d-inline">
+                    <button type="submit" class="btn btn-primary">
+                        Confirmer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Tentative affichage modal clôture année...');
+    // Essayer avec jQuery/Bootstrap
+    if (typeof $ !== 'undefined' && typeof $.fn.modal !== 'undefined') {
+        console.log('jQuery + Bootstrap modal disponibles');
+        $('#closeYearModal').modal('show');
+    } else {
+        console.log('jQuery/Bootstrap non disponibles, affichage natif');
+        // Fallback : afficher le modal manuellement
+        var modal = document.getElementById('closeYearModal');
+        if (modal) {
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            // Ajouter le backdrop
+            var backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            document.body.appendChild(backdrop);
+        }
+    }
+});
+</script>
+<?php endif; ?>
 
 <!-- Modal Nouvelle année universitaire -->
 <div class="modal fade" id="newYearModal" tabindex="-1" role="dialog" aria-labelledby="newYearModalLabel" aria-hidden="true">
@@ -333,6 +556,35 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+.year-pill,
+.sem-pill {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    padding-left: 16px;
+    padding-right: 16px;
+    white-space: nowrap;
+}
+
+.disabled-year {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+}
+
+.year-pill.active,
+.sem-pill.active {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 4px 10px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
+}
+
+.year-pill:hover,
+.sem-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+}
+
 .activity-feed .feed-item {
     padding: 10px 0;
     border-bottom: 1px solid #eee;

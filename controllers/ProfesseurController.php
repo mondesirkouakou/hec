@@ -225,6 +225,15 @@ class ProfesseurController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Déterminer le semestre actuellement ouvert pour associer les notes
+            $semestreActif = $db->fetch("SELECT id FROM semestres WHERE est_ouvert = 1 LIMIT 1");
+            if (!$semestreActif) {
+                $_SESSION['error'] = "Aucun semestre ouvert, impossible d'enregistrer les notes.";
+                header('Location: ' . BASE_URL . 'professeur/notes/' . (int)$classeId . '/' . (int)$matiereId);
+                exit();
+            }
+            $semestreId = (int)$semestreActif['id'];
+
             $notesData = [];
             $postedAvg = $_POST['notes'] ?? [];
             $appreciations = $_POST['appreciations'] ?? [];
@@ -276,8 +285,7 @@ class ProfesseurController {
                     'etudiant_id' => (int)$etudiantId,
                     'matiere_id' => (int)$matiereId,
                     'classe_id' => (int)$classeId,
-                    // TODO: ajuster si vous gérez plusieurs semestres; 1 est un placeholder
-                    'semestre_id' => 1,
+                    'semestre_id' => $semestreId,
                     'note' => round($avg, 2),
                     'note1' => $vals[1],
                     'note2' => $vals[2],
@@ -297,8 +305,11 @@ class ProfesseurController {
             $ok = $this->professeurModel->enregistrerNotes($this->professeur['id'], $notesData);
             if ($ok) {
                 $_SESSION['success'] = 'Notes enregistrées';
+                unset($_SESSION['error']);
             } else {
-                $_SESSION['error'] = 'Erreur lors de l\'enregistrement des notes';
+                if (empty($_SESSION['error'])) {
+                    $_SESSION['error'] = 'Erreur lors de l\'enregistrement des notes';
+                }
             }
             header('Location: ' . BASE_URL . 'professeur/notes/' . (int)$classeId . '/' . (int)$matiereId);
             exit();

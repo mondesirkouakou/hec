@@ -81,6 +81,8 @@ switch ($path) {
                     }
                 } elseif (isset($parts[2]) && $parts[2] === 'supprimer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $controller->delete($id);
+                } elseif (isset($parts[2]) && $parts[2] === 'cloturer-et-creer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $controller->closeAndRollOver($id);
                 } else {
                     $controller->show($id);
                 }

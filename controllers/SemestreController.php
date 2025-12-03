@@ -264,8 +264,14 @@ class SemestreController {
         } else {
             $_SESSION['error'] = "Une erreur est survenue lors de la clôture du semestre.";
         }
-        
-        header('Location: ' . BASE_URL . 'admin/semestres/' . $id);
+
+        // Après clôture, retourner au tableau de bord pour éventuellement déclencher la clôture d'année
+        $anneeId = isset($semestre['annee_universitaire_id']) ? (int)$semestre['annee_universitaire_id'] : null;
+        if ($anneeId) {
+            header('Location: ' . BASE_URL . 'admin/dashboard?annee_id=' . $anneeId);
+        } else {
+            header('Location: ' . BASE_URL . 'admin/dashboard');
+        }
         exit();
     }
     

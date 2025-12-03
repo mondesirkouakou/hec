@@ -1,11 +1,19 @@
 <?php
 require_once __DIR__ . '/../classes/Etudiant.php';
+require_once __DIR__ . '/../classes/AnneeUniversitaire.php';
+require_once __DIR__ . '/../classes/Semestre.php';
+require_once __DIR__ . '/../classes/Database.php';
 
 class EtudiantController {
     private $etudiant;
+    private $anneeModel;
+    private $semestreModel;
     
     public function __construct() {
         $this->etudiant = new Etudiant();
+        $db = Database::getInstance();
+        $this->anneeModel = new AnneeUniversitaire($db);
+        $this->semestreModel = new Semestre($db);
         $this->checkAccess();
     }
     
@@ -38,7 +46,78 @@ class EtudiantController {
      * Affiche le tableau de bord de l'étudiant
      */
     public function dashboardData() {
-        $notes = $this->getNotes();
+        // Déterminer année / semestre / session sélectionnés
+        $annees = $this->anneeModel->getAll();
+        $anneeActive = $this->anneeModel->getActiveYear();
+
+        // Construire une timeline d'années continues (comme sur le dashboard admin)
+        $anneeTimeline = [];
+        if (!empty($annees)) {
+            // Ordonner les années existantes par année de début croissante
+            usort($annees, function($a, $b) {
+                $ad = (int)($a['annee_debut'] ?? 0);
+                $bd = (int)($b['annee_debut'] ?? 0);
+                return $ad <=> $bd;
+            });
+
+            $minDebut = null;
+            $indexParDebut = [];
+            foreach ($annees as $a) {
+                $debut = (int)($a['annee_debut'] ?? 0);
+                $fin = (int)($a['annee_fin'] ?? 0);
+                if ($minDebut === null || $debut < $minDebut) {
+                    $minDebut = $debut;
+                }
+                $indexParDebut[$debut] = $a;
+            }
+
+            if ($minDebut !== null) {
+                $upperDebut = 2098; // aller jusqu'à 2098-2099
+                for ($y = $minDebut; $y <= $upperDebut; $y++) {
+                    $exists = isset($indexParDebut[$y]);
+                    $record = $exists ? $indexParDebut[$y] : null;
+                    $anneeTimeline[] = [
+                        'annee_debut' => $y,
+                        'annee_fin'   => $y + 1,
+                        'exists'      => $exists,
+                        'record'      => $record,
+                    ];
+                }
+            }
+        }
+
+        $selectedAnneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
+        if ($selectedAnneeId) {
+            $_SESSION['etu_annee_id'] = $selectedAnneeId;
+        } elseif (isset($_SESSION['etu_annee_id'])) {
+            $selectedAnneeId = (int)$_SESSION['etu_annee_id'];
+        } elseif ($anneeActive) {
+            $selectedAnneeId = (int)$anneeActive['id'];
+        }
+
+        $semestresAnnee = [];
+        if ($selectedAnneeId) {
+            $semestresAnnee = $this->semestreModel->getByAnneeUniversitaire($selectedAnneeId);
+        }
+
+        $semestreActif = $this->semestreModel->getActiveSemestre();
+        $selectedSemestreId = isset($_GET['semestre_id']) ? (int)$_GET['semestre_id'] : null;
+        if ($selectedSemestreId) {
+            $_SESSION['etu_semestre_id'] = $selectedSemestreId;
+        } elseif (isset($_SESSION['etu_semestre_id'])) {
+            $selectedSemestreId = (int)$_SESSION['etu_semestre_id'];
+        } elseif ($semestreActif && $semestreActif['annee_universitaire_id'] == $selectedAnneeId) {
+            $selectedSemestreId = (int)$semestreActif['id'];
+        }
+
+        $selectedSession = isset($_GET['session']) ? (int)$_GET['session'] : (isset($_SESSION['etu_session']) ? (int)$_SESSION['etu_session'] : 1);
+        if ($selectedSession < 1 || $selectedSession > 4) {
+            $selectedSession = 1;
+        }
+        $_SESSION['etu_session'] = $selectedSession;
+
+        // Notes et infos dépendantes du semestre / session sélectionnés
+        $notes = $this->getNotes($selectedSemestreId, $selectedSession);
         $classe = $this->getClasse();
         $moyennes = $this->calculerMoyennes();
         $emploi = $this->getEmploiDuTemps();
@@ -89,7 +168,7 @@ class EtudiantController {
         }
         $notes_par_matiere = array_values($notes_par_matiere);
         $etudiant = $this->etudiant;
-        return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','notes_par_matiere','etudiant');
+        return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','notes_par_matiere','etudiant','annees','anneeActive','selectedAnneeId','semestresAnnee','selectedSemestreId','selectedSession','anneeTimeline');
     }
 
     public function renderDashboard() {
@@ -101,20 +180,33 @@ class EtudiantController {
     /**
      * Récupère les notes de l'étudiant
      */
-    public function getNotes($semestreId = null) {
+    public function getNotes($semestreId = null, $session = null) {
         $params = ['etudiant_id' => $this->etudiant['id']];
         $whereClause = '';
         
         if ($semestreId) {
-            $whereClause = 'AND n.semestre_id = :semestre_id';
+            $whereClause .= ' AND n.semestre_id = :semestre_id';
             $params['semestre_id'] = $semestreId;
         }
+
+        if ($session !== null) {
+            $whereClause .= ' AND (n.session = :session OR n.session IS NULL)';
+            $params['session'] = $session;
+        }
         
-        $sql = "SELECT n.*, m.intitule AS matiere_nom, m.credits AS coefficient,
-                       s.numero AS semestre_numero
+        $sql = "SELECT n.*, m.intitule AS matiere_nom,
+                       cm.credits AS credits,
+                       cm.coefficient AS coefficient,
+                       s.numero AS semestre_numero,
+                       (SELECT AVG(n2.note)
+                          FROM notes n2
+                         WHERE n2.classe_id = n.classe_id
+                           AND n2.matiere_id = n.matiere_id
+                           AND n2.semestre_id = n.semestre_id) AS moyenne_classe
                 FROM notes n
                 JOIN matieres m ON n.matiere_id = m.id
                 JOIN semestres s ON n.semestre_id = s.id
+                LEFT JOIN classe_matiere cm ON cm.classe_id = n.classe_id AND cm.matiere_id = n.matiere_id
                 WHERE n.etudiant_id = :etudiant_id
                 $whereClause
                 ORDER BY s.numero, m.intitule";
@@ -202,6 +294,70 @@ class EtudiantController {
         include __DIR__ . '/../views/etudiant/notes/index.php';
     }
     
+    public function renderBulletin() {
+        // Année / semestre / session sélectionnés pour le bulletin
+        $semestreId = isset($_GET['semestre_id']) ? (int)$_GET['semestre_id'] : (isset($_SESSION['etu_semestre_id']) ? (int)$_SESSION['etu_semestre_id'] : 1);
+        $session = isset($_GET['session']) ? (int)$_GET['session'] : (isset($_SESSION['etu_session']) ? (int)$_SESSION['etu_session'] : null);
+        if ($session !== null && ($session < 1 || $session > 4)) {
+            $session = 1;
+        }
+
+        $notes = $this->getNotes($semestreId, $session);
+        $classe = $this->getClasse();
+        $etudiant = $this->etudiant;
+
+        // Déterminer l'année académique et le numéro de semestre à partir des données réelles
+        $annee_academique = null;
+        $semestreNumero = null;
+
+        $semestreInfos = null;
+        if ($semestreId) {
+            $semestreInfos = $this->semestreModel->getById($semestreId);
+        } else {
+            $semestreInfos = $this->semestreModel->getActiveSemestre();
+        }
+
+        if ($semestreInfos) {
+            $anneeDebut = isset($semestreInfos['annee_debut']) ? (int)$semestreInfos['annee_debut'] : null;
+            $anneeFin   = isset($semestreInfos['annee_fin']) ? (int)$semestreInfos['annee_fin'] : null;
+            if ($anneeDebut && $anneeFin) {
+                $annee_academique = $anneeDebut . '-' . $anneeFin;
+            }
+            if (isset($semestreInfos['numero'])) {
+                $semestreNumero = (int)$semestreInfos['numero'];
+            }
+        }
+
+        if ($annee_academique === null) {
+            $anneeActive = $this->anneeModel->getActiveYear();
+            if ($anneeActive) {
+                $debut = isset($anneeActive['annee_debut']) ? (int)$anneeActive['annee_debut'] : (int)date('Y');
+                $fin   = isset($anneeActive['annee_fin']) ? (int)$anneeActive['annee_fin'] : ($debut + 1);
+                $annee_academique = $debut . '-' . $fin;
+            } else {
+                $annee_academique = date('Y') . '-' . (date('Y') + 1);
+            }
+        }
+
+        if ($semestreNumero === null) {
+            if (!empty($notes) && isset($notes[0]['semestre_numero'])) {
+                $semestreNumero = (int)$notes[0]['semestre_numero'];
+            } else {
+                $semestreNumero = 1;
+            }
+        }
+
+        $download = isset($_GET['download']) && $_GET['download'] === '1';
+
+        if ($download) {
+            $filename = 'bulletin_' . ($etudiant['matricule'] ?? 'etudiant') . '.html';
+            header('Content-Type: text/html; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+        }
+
+        include __DIR__ . '/../views/etudiant/bulletin.php';
+    }
+    
     /**
      * Calcule les moyennes de l'étudiant par semestre
      */
@@ -252,13 +408,24 @@ class EtudiantController {
      * Récupère la classe de l'étudiant
      */
     public function getClasse() {
+        $params = ['etudiant_id' => $this->etudiant['id']];
+        $anneeFilter = '';
+
+        // Si une année est sélectionnée sur le dashboard étudiant,
+        // on ne considère que l'inscription de cette année universitaire
+        if (!empty($_SESSION['etu_annee_id'])) {
+            $anneeFilter = ' AND i.annee_universitaire_id = :annee_id';
+            $params['annee_id'] = (int)$_SESSION['etu_annee_id'];
+        }
+
         $sql = "SELECT c.* 
                 FROM classes c
                 JOIN inscriptions i ON c.id = i.classe_id
-                WHERE i.etudiant_id = :etudiant_id";
+                WHERE i.etudiant_id = :etudiant_id" . $anneeFilter . "
+                LIMIT 1";
         
         $db = Database::getInstance();
-        return $db->fetch($sql, ['etudiant_id' => $this->etudiant['id']]);
+        return $db->fetch($sql, $params);
     }
     
     /**

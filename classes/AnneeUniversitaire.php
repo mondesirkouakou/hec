@@ -49,7 +49,8 @@ class AnneeUniversitaire {
             'est_active' => $data['est_active'] ?? 0
         ];
         
-        return $this->db->query($query, $params) ? $this->db->lastInsertId() : false;
+        // La méthode Database::insert() exécute la requête et retourne l'ID inséré
+        return $this->db->insert($query, $params);
     }
     
     /**
@@ -59,8 +60,7 @@ class AnneeUniversitaire {
         $query = "UPDATE {$this->table_name} 
                  SET annee_debut = :annee_debut, 
                      annee_fin = :annee_fin,
-                     est_active = :est_active,
-                     updated_at = NOW()
+                     est_active = :est_active
                  WHERE id = :id";
         
         $params = [
@@ -98,7 +98,7 @@ class AnneeUniversitaire {
         
         // Activer l'année sélectionnée
         return $this->db->query(
-            "UPDATE {$this->table_name} SET est_active = 1, updated_at = NOW() WHERE id = :id",
+            "UPDATE {$this->table_name} SET est_active = 1 WHERE id = :id",
             ['id' => $id]
         );
     }

@@ -158,16 +158,32 @@ class Professeur extends User {
     
     /**
      * Récupère les matières enseignées par un professeur
-     * @param int $professeurId ID du professeur
-     * @return array Liste des matières enseignées
+     * pour l'année universitaire active (par défaut) ou une année donnée.
+     *
+     * @param int      $professeurId ID du professeur
+     * @param int|null $anneeId      ID de l'année universitaire (optionnel)
+     * @return array   Liste des matières enseignées
      */
-    public function getMatieresEnseignees($professeurId) {
-        $sql = "SELECT m.* 
+    public function getMatieresEnseignees($professeurId, $anneeId = null) {
+        $params = ['professeur_id' => $professeurId];
+
+        if ($anneeId === null) {
+            $anneeActive = $this->getAnneeUniversitaireActive();
+            if (!$anneeActive) {
+                return [];
+            }
+            $anneeId = (int)$anneeActive['id'];
+        }
+
+        $params['annee_id'] = $anneeId;
+
+        $sql = "SELECT DISTINCT m.* 
                 FROM {$this->table_matieres} m
                 JOIN {$this->table_affectation} a ON m.id = a.matiere_id
-                WHERE a.professeur_id = :professeur_id";
-                
-        return $this->db->fetchAll($sql, ['professeur_id' => $professeurId]);
+                WHERE a.professeur_id = :professeur_id
+                  AND a.annee_universitaire_id = :annee_id";
+
+        return $this->db->fetchAll($sql, $params);
     }
 
     /**
@@ -176,28 +192,52 @@ class Professeur extends User {
      * @param int $matiereId ID de la matière
      * @return array Liste des classes
      */
-    public function getClassesPourMatiere($professeurId, $matiereId) {
+    public function getClassesPourMatiere($professeurId, $matiereId, $anneeId = null) {
+        $params = [
+            'professeur_id' => $professeurId,
+            'matiere_id' => $matiereId
+        ];
+
+        if ($anneeId === null) {
+            $anneeActive = $this->getAnneeUniversitaireActive();
+            if (!$anneeActive) {
+                return [];
+            }
+            $anneeId = (int)$anneeActive['id'];
+        }
+        $params['annee_id'] = $anneeId;
+
         $sql = "SELECT DISTINCT c.* 
                 FROM classes c
                 JOIN {$this->table_affectation} a ON c.id = a.classe_id
                 WHERE a.professeur_id = :professeur_id 
-                AND a.matiere_id = :matiere_id
-                AND c.statut_listes = 'validee'";
+                  AND a.matiere_id = :matiere_id
+                  AND a.annee_universitaire_id = :annee_id
+                  AND c.statut_listes = 'validee'";
                 
-        return $this->db->fetchAll($sql, [
-            'professeur_id' => $professeurId,
-            'matiere_id' => $matiereId
-        ]);
+        return $this->db->fetchAll($sql, $params);
     }
 
-    public function getClassesAssociees($professeurId) {
+    public function getClassesAssociees($professeurId, $anneeId = null) {
+        $params = ['professeur_id' => $professeurId];
+
+        if ($anneeId === null) {
+            $anneeActive = $this->getAnneeUniversitaireActive();
+            if (!$anneeActive) {
+                return [];
+            }
+            $anneeId = (int)$anneeActive['id'];
+        }
+        $params['annee_id'] = $anneeId;
+
         $sql = "SELECT DISTINCT c.* 
                 FROM classes c
                 JOIN {$this->table_affectation} a ON c.id = a.classe_id
                 WHERE a.professeur_id = :professeur_id
+                  AND a.annee_universitaire_id = :annee_id
                   AND c.statut_listes = 'validee'
                 ORDER BY c.intitule";
-        return $this->db->fetchAll($sql, ['professeur_id' => $professeurId]);
+        return $this->db->fetchAll($sql, $params);
     }
 
     /**
@@ -340,17 +380,16 @@ class Professeur extends User {
             $currentDate = date('Y-m-d H:i:s');
 
             foreach ($notesData as $note) {
-                // Vérifier si une note existe déjà pour cet étudiant / matière / classe / semestre
+                // Vérifier si une note existe déjà pour cet étudiant / matière / semestre
+                // (clé unique unique_note(etudiant_id, matiere_id, semestre_id))
                 $existingNote = $this->db->fetch(
                     "SELECT id FROM notes 
                      WHERE etudiant_id = :etudiant_id 
                        AND matiere_id = :matiere_id 
-                       AND classe_id = :classe_id 
                        AND semestre_id = :semestre_id",
                     [
                         'etudiant_id' => $note['etudiant_id'],
                         'matiere_id' => $note['matiere_id'],
-                        'classe_id' => $note['classe_id'],
                         'semestre_id' => $note['semestre_id'],
                     ]
                 );
@@ -414,7 +453,11 @@ class Professeur extends User {
 
         } catch (Exception $e) {
             $this->db->rollBack();
-            error_log("Erreur enregistrement notes: " . $e->getMessage());
+            $msg = "Erreur enregistrement notes: " . $e->getMessage();
+            error_log($msg);
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['error'] = $msg;
+            }
             return false;
         }
     }

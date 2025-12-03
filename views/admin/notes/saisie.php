@@ -60,12 +60,26 @@ ob_start();
 
     <?php if ($classeId && $semestreId && $matiereId && !empty($etudiants)): ?>
         <div class="card">
-            <div class="card-header">Étudiants</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Étudiants</span>
+                <div>
+                    <?php $session = $session ?? 1; ?>
+                    <?php for ($i = 1; $i <= 4; $i++): ?>
+                        <?php
+                        $btnClass = 'btn btn-sm ' . ($session === $i ? 'btn-primary active' : 'btn-outline-primary');
+                        $url = BASE_URL . 'admin/notes/saisie?classe_id=' . (int)$classeId . '&semestre_id=' . (int)$semestreId . '&matiere_id=' . (int)$matiereId . '&session=' . $i;
+                        ?>
+                        <a href="<?= $url ?>" class="<?= $btnClass ?> ml-1">Session <?= $i ?></a>
+                    <?php endfor; ?>
+                </div>
+            </div>
             <div class="card-body">
                 <form method="POST" action="<?= BASE_URL ?>admin/notes/enregistrer">
                     <input type="hidden" name="classe_id" value="<?= (int)$classeId ?>">
                     <input type="hidden" name="semestre_id" value="<?= (int)$semestreId ?>">
                     <input type="hidden" name="matiere_id" value="<?= (int)$matiereId ?>">
+                    <input type="hidden" name="session" value="<?= (int)$session ?>">
+
                     <div class="table-responsive">
                         <table class="table table-bordered">
                             <thead>
@@ -84,10 +98,10 @@ ob_start();
                                         <td><?= htmlspecialchars($e['nom']) ?></td>
                                         <td><?= htmlspecialchars($e['prenom']) ?></td>
                                         <td style="width: 120px">
-                                            <input type="number" step="0.01" min="0" max="20" class="form-control" name="notes[<?= (int)$e['id'] ?>][note]">
+                                            <input type="number" step="0.01" min="0" max="20" class="form-control" name="notes[<?= (int)$e['id'] ?>][note]" value="<?= htmlspecialchars($e['note_examen'] ?? '') ?>">
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control" name="notes[<?= (int)$e['id'] ?>][appreciation]" placeholder="Optionnel">
+                                            <input type="text" class="form-control" name="notes[<?= (int)$e['id'] ?>][appreciation]" placeholder="Optionnel" value="<?= htmlspecialchars($e['appreciation'] ?? '') ?>">
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

@@ -6,7 +6,7 @@ ob_start();
 <div class="page-header">
     <h1><i class="fas fa-chalkboard"></i> Détails de la classe</h1>
     <div class="page-actions">
-        <a href="<?= BASE_URL ?>admin/classes" class="btn btn-secondary">
+        <a href="<?= BASE_URL ?>admin/classes?annee_id=<?= (int)$classe['annee_universitaire_id'] ?>" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Retour à la liste
         </a>
         <a href="<?= BASE_URL ?>admin/classes/modifier/<?= $classe['id'] ?>" class="btn btn-warning">

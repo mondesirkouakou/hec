@@ -29,8 +29,8 @@ ob_start();
                         <div class="col-md-3"><input type="email" name="email" class="form-control" required placeholder="prenom.nom@hec.ci"></div>
                         <div class="col-md-3"><input type="tel" name="telephone" class="form-control" required pattern="[0-9]{10}" placeholder="0708123456"></div>
                         <div class="col-md-4">
-                            <select name="matiere_id" class="form-control" required>
-                                <option value="">Sélectionner une matière</option>
+                            <select name="matiere_ids[]" class="form-control" multiple required>
+                                <option value="" disabled>Sélectionner une ou plusieurs matières</option>
                                 <?php
                                 $db = Database::getInstance();
                                 $matieresDisponibles = $db->fetchAll(

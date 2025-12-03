@@ -111,22 +111,42 @@ class ChefClasseController {
      */
     public function ajouterProfesseur() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $professeurData = [
-                'nom' => $_POST['nom'] ?? '',
-                'prenom' => $_POST['prenom'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'telephone' => $_POST['telephone'] ?? '',
-                'matiere_id' => $_POST['matiere_id'] ?? ''
-            ];
-            
-            $resultat = $this->chefClasse->ajouterNouveauProfesseur($professeurData);
-            
-            if ($resultat) {
+            $matiereIds = $_POST['matiere_ids'] ?? ($_POST['matiere_id'] ?? []);
+
+            if (!is_array($matiereIds)) {
+                $matiereIds = [$matiereIds];
+            }
+
+            $matiereIds = array_unique(array_filter(array_map('intval', $matiereIds)));
+
+            if (empty($matiereIds)) {
+                $_SESSION['error'] = 'Veuillez sélectionner au moins une matière';
+                header('Location: ' . BASE_URL . 'chef-classe/dashboard');
+                exit();
+            }
+
+            $success = true;
+            foreach ($matiereIds as $matiereId) {
+                $professeurData = [
+                    'nom' => $_POST['nom'] ?? '',
+                    'prenom' => $_POST['prenom'] ?? '',
+                    'email' => $_POST['email'] ?? '',
+                    'telephone' => $_POST['telephone'] ?? '',
+                    'matiere_id' => $matiereId
+                ];
+
+                if (!$this->chefClasse->ajouterNouveauProfesseur($professeurData)) {
+                    $success = false;
+                    break;
+                }
+            }
+
+            if ($success) {
                 $_SESSION['message'] = 'Professeur ajouté avec succès';
             } else {
                 $_SESSION['error'] = 'Erreur lors de l\'ajout du professeur';
             }
-            
+
             header('Location: ' . BASE_URL . 'chef-classe/dashboard');
             exit();
         }

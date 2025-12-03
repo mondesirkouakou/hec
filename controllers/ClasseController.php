@@ -21,10 +21,19 @@ class ClasseController {
      */
     public function index() {
         $filtreStatutListes = $_GET['statut_listes'] ?? null;
+        $anneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
+
         if ($filtreStatutListes === 'en_attente') {
+            // Pour les listes en attente, on reste limité à l'année active
             $classes = $this->classeModel->getClassesEnAttenteValidation();
         } else {
-            $classes = $this->classeModel->getAllClasses();
+            if ($anneeId) {
+                // Lister les classes de l'année demandée (même si l'année est fermée)
+                $classes = $this->classeModel->getClassesByAnneeUniversitaire($anneeId);
+            } else {
+                // Comportement par défaut : classes de l'année active
+                $classes = $this->classeModel->getAllClasses();
+            }
         }
         include __DIR__ . '/../views/admin/classes/index.php';
     }

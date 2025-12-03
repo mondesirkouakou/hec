@@ -21,6 +21,11 @@ switch ($path) {
         $controller->renderNotes();
         break;
 
+    case '/bulletin':
+        require_once __DIR__ . '/../controllers/EtudiantController.php';
+        $controller = new EtudiantController();
+        $controller->renderBulletin();
+        break;
 
     default:
         http_response_code(404);

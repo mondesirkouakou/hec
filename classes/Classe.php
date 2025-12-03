@@ -21,6 +21,7 @@ class Classe {
                   LEFT JOIN inscriptions i ON c.id = i.classe_id
                   LEFT JOIN chef_classe cc ON c.id = cc.classe_id
                   LEFT JOIN etudiants e_chef ON cc.etudiant_id = e_chef.id
+                  WHERE a.est_active = 1
                   GROUP BY c.id
                   ORDER BY c.code, a.annee_debut DESC";
         return $this->db->fetchAll($query);
@@ -36,10 +37,26 @@ class Classe {
                   LEFT JOIN inscriptions i ON c.id = i.classe_id
                   LEFT JOIN chef_classe cc ON c.id = cc.classe_id
                   LEFT JOIN etudiants e_chef ON cc.etudiant_id = e_chef.id
-                  WHERE c.statut_listes = 'en_attente'
+                  WHERE c.statut_listes = 'en_attente' AND a.est_active = 1
                   GROUP BY c.id
                   ORDER BY c.code, a.annee_debut DESC";
         return $this->db->fetchAll($query);
+    }
+
+    public function getClassesByAnneeUniversitaire($anneeId) {
+        $query = "SELECT c.*, a.annee_debut, a.annee_fin,
+                         COUNT(DISTINCT i.etudiant_id) AS effectif,
+                         CONCAT(e_chef.nom, ' ', e_chef.prenom) AS chef_classe_nom,
+                         c.statut_listes
+                  FROM {$this->table_name} c
+                  LEFT JOIN annees_universitaires a ON c.annee_universitaire_id = a.id
+                  LEFT JOIN inscriptions i ON c.id = i.classe_id
+                  LEFT JOIN chef_classe cc ON c.id = cc.classe_id
+                  LEFT JOIN etudiants e_chef ON cc.etudiant_id = e_chef.id
+                  WHERE c.annee_universitaire_id = :annee_id
+                  GROUP BY c.id
+                  ORDER BY c.code, a.annee_debut DESC";
+        return $this->db->fetchAll($query, ['annee_id' => $anneeId]);
     }
 
     public function count() {
@@ -89,8 +106,7 @@ class Classe {
                  SET code = :code, 
                      intitule = :intitule, 
                      niveau = :niveau,
-                     annee_universitaire_id = :annee_universitaire_id,
-                     updated_at = NOW()
+                     annee_universitaire_id = :annee_universitaire_id
                  WHERE id = :id";
         
         $params = [
@@ -188,11 +204,11 @@ class Classe {
         ]);
 
         if ($exists > 0) {
-            // Mettre à jour si elle existe déjà
-            $query = "UPDATE classe_matiere SET coefficient = :coefficient, credits = :credits, updated_at = NOW() WHERE classe_id = :classe_id AND matiere_id = :matiere_id";
+            // Mettre à jour si elle existe déjà (sans colonnes de timestamps)
+            $query = "UPDATE classe_matiere SET coefficient = :coefficient, credits = :credits WHERE classe_id = :classe_id AND matiere_id = :matiere_id";
         } else {
             // Insérer si elle n'existe pas
-            $query = "INSERT INTO classe_matiere (classe_id, matiere_id, coefficient, credits, created_at) VALUES (:classe_id, :matiere_id, :coefficient, :credits, NOW())";
+            $query = "INSERT INTO classe_matiere (classe_id, matiere_id, coefficient, credits) VALUES (:classe_id, :matiere_id, :coefficient, :credits)";
         }
 
         $params = [

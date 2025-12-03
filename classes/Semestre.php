@@ -71,7 +71,8 @@ class Semestre {
             'est_cloture' => $data['est_cloture'] ?? 0
         ];
         
-        return $this->db->query($query, $params) ? $this->db->lastInsertId() : false;
+        // Utilise Database::insert() qui exécute la requête et retourne l'ID inséré
+        return $this->db->insert($query, $params);
     }
     
     /**

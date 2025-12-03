@@ -39,9 +39,9 @@ ob_start();
                     <input type="tel" name="telephone" class="form-control" required pattern="[0-9]{10}" placeholder="0708123456" <?= $listeSoumise ? 'disabled' : '' ?>>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Matière</label>
-                    <select name="matiere_id" class="form-control" required <?= $listeSoumise ? 'disabled' : '' ?>>
-                        <option value="">Sélectionner une matière</option>
+                    <label class="form-label">Matière(s)</label>
+                    <select name="matiere_ids[]" class="form-control" multiple required <?= $listeSoumise ? 'disabled' : '' ?>>
+                        <option value="" disabled>Sélectionner une ou plusieurs matières</option>
                         <?php
                         $db = Database::getInstance();
                         $matieresDisponibles = $db->fetchAll(
