@@ -147,15 +147,55 @@ class EtudiantController {
             'nb_matieres' => count($notes),
             'evolution_moyenne' => null
         ];
-        // Regrouper les notes par matière pour l'affichage "Mes notes de classe"
+        // Regrouper les notes de CLASSE par matière pour l'affichage "Mes notes de classe".
+        // On se base sur toutes les notes du semestre (sans filtrer par session), puis on choisit,
+        // pour chaque matière, la ligne la plus pertinente pour les notes de classe (notes1-5 / note).
         $notes_par_matiere = [];
-        foreach ($notes as $n) {
+        $notesClasseSource = [];
+        if (!empty($selectedSemestreId)) {
+            $notesClasseSource = $this->getNotes($selectedSemestreId, null);
+        } else {
+            $notesClasseSource = $notes;
+        }
+
+        $parMatiere = [];
+        foreach ($notesClasseSource as $n) {
             $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
             if ($mid === 0) {
                 continue;
             }
-            // On conserve la dernière ligne rencontrée pour chaque matière (dernier semestre saisi)
-            $notes_par_matiere[$mid] = [
+
+            // Déterminer si cette ligne contient des notes de classe (note1..note5 / note)
+            $hasNotesPartielles = false;
+            for ($i = 1; $i <= 5; $i++) {
+                $key = 'note' . $i;
+                if (array_key_exists($key, $n) && $n[$key] !== null) {
+                    $hasNotesPartielles = true;
+                    break;
+                }
+            }
+            $hasMoyenneClasse = isset($n['note']) && $n['note'] !== null;
+
+            // Calcul d'un score pour choisir la meilleure ligne par matière
+            $score = 0;
+            if ($hasNotesPartielles) { $score += 10; }
+            if ($hasMoyenneClasse) { $score += 5; }
+
+            // On favorise les lignes sans session (lignes historiques de notes de classe)
+            $sessionNote = isset($n['session']) ? $n['session'] : null;
+            if ($sessionNote === null) { $score += 2; }
+
+            if (!isset($parMatiere[$mid]) || $score > $parMatiere[$mid]['score']) {
+                $parMatiere[$mid] = [
+                    'row' => $n,
+                    'score' => $score,
+                ];
+            }
+        }
+
+        foreach ($parMatiere as $mid => $data) {
+            $n = $data['row'];
+            $notes_par_matiere[] = [
                 'id' => $mid,
                 'nom' => $n['matiere_nom'] ?? '',
                 'note1' => isset($n['note1']) ? (float)$n['note1'] : null,
@@ -166,7 +206,6 @@ class EtudiantController {
                 'moyenne' => isset($n['note']) ? (float)$n['note'] : null,
             ];
         }
-        $notes_par_matiere = array_values($notes_par_matiere);
         $etudiant = $this->etudiant;
         return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','notes_par_matiere','etudiant','annees','anneeActive','selectedAnneeId','semestresAnnee','selectedSemestreId','selectedSession','anneeTimeline');
     }
@@ -190,7 +229,13 @@ class EtudiantController {
         }
 
         if ($session !== null) {
-            $whereClause .= ' AND (n.session = :session OR n.session IS NULL)';
+            // Session 1 : inclure les notes sans session (anciennes données) ou session=1
+            // Sessions 2, 3, 4 : n'afficher que les matières qui ont une note pour cette session
+            if ((int)$session === 1) {
+                $whereClause .= ' AND (n.session = :session OR n.session IS NULL)';
+            } else {
+                $whereClause .= ' AND n.session = :session';
+            }
             $params['session'] = $session;
         }
         
@@ -303,8 +348,131 @@ class EtudiantController {
         }
 
         $notes = $this->getNotes($semestreId, $session);
+
+        // Pour la session 1, il peut exister plusieurs lignes de notes pour une
+        // même matière (notes de classe + notes d'examen, voire anciennes
+        // saisies). On agrège ici ces lignes pour n'en conserver qu'une seule
+        // par matière, en prenant la meilleure ligne de notes de classe
+        // (notes1..5 / note) et en y fusionnant la note d'examen.
+        if (!empty($notes)) {
+            $sessionInt = ($session !== null) ? (int)$session : 1;
+            if ($sessionInt === 1) {
+                $grouped = [];
+                foreach ($notes as $n) {
+                    $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
+                    if ($mid === 0) {
+                        continue;
+                    }
+
+                    // Score pour la qualité de la ligne de notes de CLASSE
+                    $hasNotesPartielles = false;
+                    for ($i = 1; $i <= 5; $i++) {
+                        $key = 'note' . $i;
+                        if (array_key_exists($key, $n) && $n[$key] !== null) {
+                            $hasNotesPartielles = true;
+                            break;
+                        }
+                    }
+                    $hasMoyenneClasse = isset($n['note']) && $n['note'] !== null;
+
+                    $score = 0;
+                    if ($hasNotesPartielles) {
+                        $score += 10;
+                    }
+                    if ($hasMoyenneClasse) {
+                        $score += 5;
+                    }
+                    // On favorise les lignes sans session (vraies notes de classe).
+                    $sessionNote = isset($n['session']) ? $n['session'] : null;
+                    if ($sessionNote === null) {
+                        $score += 2;
+                    }
+
+                    if (!isset($grouped[$mid])) {
+                        $grouped[$mid] = [
+                            'row' => $n,
+                            'score' => $score,
+                            'note_examen' => isset($n['note_examen']) ? $n['note_examen'] : null,
+                        ];
+                    } else {
+                        // Mettre à jour la ligne de CLASSE si cette ligne est meilleure.
+                        if ($score > $grouped[$mid]['score']) {
+                            $oldExam = $grouped[$mid]['note_examen'];
+                            $grouped[$mid]['row'] = $n;
+                            $grouped[$mid]['score'] = $score;
+                            if ($oldExam !== null) {
+                                $grouped[$mid]['note_examen'] = $oldExam;
+                            } elseif (isset($n['note_examen']) && $n['note_examen'] !== null) {
+                                $grouped[$mid]['note_examen'] = $n['note_examen'];
+                            }
+                        } else {
+                            // Conserver la meilleure ligne de CLASSE mais récupérer
+                            // une éventuelle note d'examen manquante.
+                            if ($grouped[$mid]['note_examen'] === null && isset($n['note_examen']) && $n['note_examen'] !== null) {
+                                $grouped[$mid]['note_examen'] = $n['note_examen'];
+                            }
+                        }
+                    }
+                }
+
+                // Reconstruire le tableau $notes agrégé.
+                $notesAggreg = [];
+                foreach ($grouped as $mid => $data) {
+                    $row = $data['row'];
+                    if (isset($data['note_examen']) && $data['note_examen'] !== null) {
+                        $row['note_examen'] = $data['note_examen'];
+                    }
+                    $notesAggreg[] = $row;
+                }
+                $notes = $notesAggreg;
+            }
+        }
+
         $classe = $this->getClasse();
         $etudiant = $this->etudiant;
+
+        // Calcul du total des crédits cumulés au semestre (toutes sessions jusqu'à la session actuelle)
+        $totalCreditsCumul = 0;
+        if ($semestreId) {
+            $notesToutesSessions = $this->getNotes($semestreId, null); // sans filtrer par session
+            if (is_array($notesToutesSessions)) {
+                foreach ($notesToutesSessions as $n) {
+                    // Session associée à cette note (1 par défaut si NULL)
+                    $sessionNote = isset($n['session']) ? (int)$n['session'] : 1;
+                    if ($sessionNote < 1 || $sessionNote > 4) {
+                        $sessionNote = 1;
+                    }
+
+                    // Ne pas compter les sessions futures par rapport à la session affichée
+                    if ($session !== null && $sessionNote > $session) {
+                        continue;
+                    }
+
+                    $noteClasse = isset($n['note']) ? (float)$n['note'] : null;
+                    $noteExamen = isset($n['note_examen']) ? (float)$n['note_examen'] : null;
+                    $moyenneFinaleNote = null;
+
+                    // Formule selon la session de la note : session 1 -> 40/60, sessions 2-4 -> examen seul
+                    if ($sessionNote === 1) {
+                        if ($noteClasse !== null && $noteExamen !== null) {
+                            $moyenneFinaleNote = 0.4 * $noteClasse + 0.6 * $noteExamen;
+                        } elseif ($noteClasse !== null) {
+                            $moyenneFinaleNote = $noteClasse;
+                        } elseif ($noteExamen !== null) {
+                            $moyenneFinaleNote = $noteExamen;
+                        }
+                    } else {
+                        if ($noteExamen !== null) {
+                            $moyenneFinaleNote = $noteExamen;
+                        }
+                    }
+
+                    if ($moyenneFinaleNote !== null && $moyenneFinaleNote >= 10 && isset($n['credits'])) {
+                        $totalCreditsCumul += (float)$n['credits'];
+                    }
+                }
+            }
+        }
 
         // Déterminer l'année académique et le numéro de semestre à partir des données réelles
         $annee_academique = null;

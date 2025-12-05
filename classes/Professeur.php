@@ -348,23 +348,46 @@ class Professeur extends User {
      * @param int $matiereId ID de la matière
      * @return array Liste des étudiants avec leurs notes éventuelles
      */
-    public function getEtudiantsPourNote($classeId, $matiereId) {
-        $sql = "SELECT e.id, e.matricule, e.nom, e.prenom,
-                       n.note, n.appreciation, n.statut,
-                       n.note1, n.note2, n.note3, n.note4, n.note5
-                FROM etudiants e
-                JOIN inscriptions i ON e.id = i.etudiant_id
-                LEFT JOIN notes n ON e.id = n.etudiant_id
-                                  AND n.matiere_id = :matiere_id
-                                  AND n.classe_id = :classe_id
-                WHERE i.classe_id = :classe_id_join
-                ORDER BY e.nom, e.prenom";
+    public function getEtudiantsPourNote($classeId, $matiereId, $semestreId = null) {
+        if ($semestreId !== null) {
+            $sql = "SELECT e.id, e.matricule, e.nom, e.prenom,
+                           n.note, n.appreciation, n.statut,
+                           n.note1, n.note2, n.note3, n.note4, n.note5
+                    FROM etudiants e
+                    JOIN inscriptions i ON e.id = i.etudiant_id
+                    LEFT JOIN notes n ON e.id = n.etudiant_id
+                                      AND n.matiere_id = :matiere_id
+                                      AND n.classe_id = :classe_id
+                                      AND n.semestre_id = :semestre_id
+                    WHERE i.classe_id = :classe_id_join
+                    ORDER BY e.nom, e.prenom";
 
-        return $this->db->fetchAll($sql, [
-            'classe_id' => $classeId,
-            'matiere_id' => $matiereId,
-            'classe_id_join' => $classeId
-        ]);
+            $params = [
+                'classe_id' => $classeId,
+                'matiere_id' => $matiereId,
+                'classe_id_join' => $classeId,
+                'semestre_id' => $semestreId
+            ];
+        } else {
+            $sql = "SELECT e.id, e.matricule, e.nom, e.prenom,
+                           n.note, n.appreciation, n.statut,
+                           n.note1, n.note2, n.note3, n.note4, n.note5
+                    FROM etudiants e
+                    JOIN inscriptions i ON e.id = i.etudiant_id
+                    LEFT JOIN notes n ON e.id = n.etudiant_id
+                                      AND n.matiere_id = :matiere_id
+                                      AND n.classe_id = :classe_id
+                    WHERE i.classe_id = :classe_id_join
+                    ORDER BY e.nom, e.prenom";
+
+            $params = [
+                'classe_id' => $classeId,
+                'matiere_id' => $matiereId,
+                'classe_id_join' => $classeId
+            ];
+        }
+
+        return $this->db->fetchAll($sql, $params);
     }
 
     /**

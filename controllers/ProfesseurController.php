@@ -52,10 +52,15 @@ class ProfesseurController {
     }
     
     /**
-     * Récupère les étudiants d'une classe pour une matière donnée
+     * Récupère les étudiants d'une classe pour une matière donnée,
+     * en filtrant leurs notes sur le semestre actuellement ouvert.
      */
     public function getEtudiantsPourNote($classeId, $matiereId) {
-        return $this->professeurModel->getEtudiantsPourNote($classeId, $matiereId);
+        $db = Database::getInstance();
+        $semestreActif = $db->fetch("SELECT id FROM semestres WHERE est_ouvert = 1 LIMIT 1");
+        $semestreId = $semestreActif ? (int)$semestreActif['id'] : null;
+
+        return $this->professeurModel->getEtudiantsPourNote($classeId, $matiereId, $semestreId);
     }
     
     /**
@@ -136,6 +141,7 @@ class ProfesseurController {
      * Exporte les notes au format CSV
      */
     public function exporterNotesCSV($matiereId, $classeId) {
+        // Utilise la même logique que l'affichage : notes du semestre actuellement ouvert
         $etudiants = $this->getEtudiantsPourNote($classeId, $matiereId);
         $db = Database::getInstance();
         $matiere = $db->fetch("SELECT * FROM matieres WHERE id = :id", ['id' => $matiereId]);
@@ -315,7 +321,55 @@ class ProfesseurController {
             exit();
         }
 
-        $etudiants = $this->professeurModel->getEtudiantsPourNote($classeId, $matiereId);
+        // Récupérer les étudiants avec leurs notes limitées au semestre actuellement ouvert
+        $etudiantsBruts = $this->getEtudiantsPourNote($classeId, $matiereId);
+
+        // Il peut exister plusieurs lignes de notes pour un même étudiant / matière / semestre
+        // (anciennes saisies, corrections, etc.). Pour la saisie, on ne conserve qu'une seule
+        // ligne par étudiant : celle qui contient le plus d'informations de notes de classe.
+        $parEtudiant = [];
+        foreach ($etudiantsBruts as $row) {
+            $eid = isset($row['id']) ? (int)$row['id'] : 0;
+            if ($eid === 0) {
+                continue;
+            }
+
+            // Compter le nombre de notes partielles remplies
+            $nbPartielles = 0;
+            for ($i = 1; $i <= 5; $i++) {
+                $key = 'note' . $i;
+                if (array_key_exists($key, $row) && $row[$key] !== null && $row[$key] !== '') {
+                    $nbPartielles++;
+                }
+            }
+            $hasMoyenne = isset($row['note']) && $row['note'] !== null && $row['note'] !== '';
+
+            // Score pour comparer deux lignes du même étudiant
+            $score = $nbPartielles;
+            if ($hasMoyenne) {
+                $score += 10;
+            }
+
+            if (!isset($parEtudiant[$eid]) || $score > $parEtudiant[$eid]['score']) {
+                $parEtudiant[$eid] = [
+                    'row' => $row,
+                    'score' => $score,
+                ];
+            }
+        }
+
+        // Extraire les lignes retenues et les trier par nom / prénom pour un affichage propre
+        $etudiants = array_map(function($item) { return $item['row']; }, $parEtudiant);
+        usort($etudiants, function($a, $b) {
+            $na = $a['nom'] ?? '';
+            $nb = $b['nom'] ?? '';
+            $cmp = strcmp($na, $nb);
+            if ($cmp !== 0) { return $cmp; }
+            $pa = $a['prenom'] ?? '';
+            $pb = $b['prenom'] ?? '';
+            return strcmp($pa, $pb);
+        });
+
         $classe = $db->fetch("SELECT * FROM classes WHERE id = :id", ['id' => $classeId]);
         $matiere = $db->fetch("SELECT * FROM matieres WHERE id = :id", ['id' => $matiereId]);
         return [

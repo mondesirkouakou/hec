@@ -82,6 +82,7 @@ class NotesController {
         }
 
         if ($classeId && $semestreId && $matiereId) {
+            // Charger les notes d'examen pour la session sélectionnée uniquement
             $etudiants = $this->db->fetchAll(
                 "SELECT e.id, e.matricule, e.nom, e.prenom,
                         n.note_examen, n.appreciation
@@ -90,12 +91,14 @@ class NotesController {
                  LEFT JOIN notes n ON n.etudiant_id = e.id
                                    AND n.matiere_id = :mid
                                    AND n.semestre_id = :sid
+                                   AND n.session = :session
                  WHERE i.classe_id = :cid
                  ORDER BY e.nom, e.prenom",
                 [
                     'cid' => $classeId,
                     'mid' => $matiereId,
                     'sid' => $semestreId,
+                    'session' => $session,
                 ]
             );
         }
@@ -138,20 +141,27 @@ class NotesController {
                 if ($val === '' || $val === null) continue;
                 $val = floatval($val);
 
-                // Upsert la note en se basant sur la clé unique
-                // unique_note (etudiant_id, matiere_id, semestre_id)
+                // Upsert la note en se basant sur la combinaison (étudiant, matière, semestre, session)
                 $existing = $this->db->fetch(
-                    "SELECT id FROM notes WHERE etudiant_id = :eid AND matiere_id = :mid AND semestre_id = :sid",
+                    "SELECT id FROM notes 
+                     WHERE etudiant_id = :eid 
+                       AND matiere_id = :mid 
+                       AND semestre_id = :sid
+                       AND session = :session",
                     [
                         'eid' => (int)$etudiantId,
                         'mid' => $matiereId,
                         'sid' => $semestreId,
+                        'session' => $session,
                     ]
                 );
 
                 if ($existing) {
                     $this->db->execute(
-                        "UPDATE notes SET note_examen = :note_examen, appreciation = :app, statut = 'soumis', session = :session, saisie_par = :saisie_par, date_saisie = NOW() WHERE id = :id",
+                        "UPDATE notes 
+                         SET note_examen = :note_examen, appreciation = :app, statut = 'soumis', session = :session, saisie_par = :saisie_par, date_saisie = NOW() 
+                         WHERE id = :id",
+
                         [
                             'note_examen' => $val,
                             'app' => $app,

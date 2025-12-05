@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS notes (
     matiere_id INT NOT NULL,
     classe_id INT NOT NULL,
     semestre_id INT NOT NULL,
+    session VARCHAR(20) NOT NULL,
     note DECIMAL(4,2) NOT NULL,
     appreciation TEXT,
     statut VARCHAR(20) DEFAULT 'brouillon', -- brouillon, soumis, valide, publie
@@ -162,7 +163,7 @@ CREATE TABLE IF NOT EXISTS notes (
     FOREIGN KEY (semestre_id) REFERENCES semestres(id),
     FOREIGN KEY (saisie_par) REFERENCES users(id),
     FOREIGN KEY (valide_par) REFERENCES users(id),
-    UNIQUE KEY unique_note (etudiant_id, matiere_id, semestre_id)
+    UNIQUE KEY unique_note (etudiant_id, matiere_id, semestre_id, session)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table d'historique des modifications de notes

@@ -236,6 +236,21 @@ class SemestreController {
         
         if ($this->semestreModel->setActiveSemestre($id)) {
             $_SESSION['success'] = "Le semestre a été activé avec succès.";
+            try {
+                if (!empty($semestre['annee_universitaire_id'])) {
+                    $anneeId = (int)$semestre['annee_universitaire_id'];
+                    $this->db->execute(
+                        "UPDATE classes SET statut_listes = NULL WHERE annee_universitaire_id = :annee_id",
+                        ['annee_id' => $anneeId]
+                    );
+                    $this->db->execute(
+                        "DELETE FROM affectation_professeur WHERE annee_universitaire_id = :annee_id",
+                        ['annee_id' => $anneeId]
+                    );
+                }
+            } catch (Exception $e) {
+                error_log('Erreur reinitialisation listes lors activation semestre: ' . $e->getMessage());
+            }
         } else {
             $_SESSION['error'] = "Une erreur est survenue lors de l'activation du semestre.";
         }

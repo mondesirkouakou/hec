@@ -160,9 +160,21 @@ if (!$isDownload) {
                         <td style="border:1px solid #000;padding:4px;">
                             <?= isset($n['credits']) ? (float)$n['credits'] : 0 ?>
                         </td>
-                        <!-- Moyenne de classe réelle -->
+                        <!-- Moyenne de classe réelle (session 1 uniquement) -->
                         <td style="border:1px solid #000;padding:4px;">
-                            <?= isset($n['moyenne_classe']) ? number_format((float)$n['moyenne_classe'], 2, ',', ' ') : '-' ?>
+                            <?php
+                            $sessionAffichee = isset($sessionNumero) ? (int)$sessionNumero : 1;
+                            if ($sessionAffichee < 1 || $sessionAffichee > 4) {
+                                $sessionAffichee = 1;
+                            }
+                            if ($sessionAffichee > 1) {
+                                // Sessions 2, 3, 4 : remplir la case avec un fond hachuré pour montrer qu'elle est rayée
+                                echo '<div style="width:100%;height:14px;background:repeating-linear-gradient(-45deg,#000 0,#000 1px,transparent 1px,transparent 3px);"></div>';
+                            } else {
+                                // Session 1 : on affiche la vraie moyenne de classe
+                                echo isset($n['moyenne_classe']) ? number_format((float)$n['moyenne_classe'], 2, ',', ' ') : '-';
+                            }
+                            ?>
                         </td>
                         <!-- Note d'examen (saisie par l'admin) -->
                         <td style="border:1px solid #000;padding:4px;">
@@ -174,12 +186,24 @@ if (!$isDownload) {
                             $noteClasse = isset($n['note']) ? (float)$n['note'] : null;
                             $noteExamen = isset($n['note_examen']) ? (float)$n['note_examen'] : null;
                             $moyenneFinale = null;
-                            if ($noteClasse !== null && $noteExamen !== null) {
-                                $moyenneFinale = 0.4 * $noteClasse + 0.6 * $noteExamen;
-                            } elseif ($noteClasse !== null) {
-                                $moyenneFinale = $noteClasse;
-                            } elseif ($noteExamen !== null) {
-                                $moyenneFinale = $noteExamen;
+
+                            $sessionAffichee = isset($sessionNumero) ? (int)$sessionNumero : 1;
+                            if ($sessionAffichee < 1 || $sessionAffichee > 4) {
+                                $sessionAffichee = 1;
+                            }
+
+                            if ($sessionAffichee > 1) {
+                                if ($noteExamen !== null) {
+                                    $moyenneFinale = $noteExamen;
+                                }
+                            } else {
+                                if ($noteClasse !== null && $noteExamen !== null) {
+                                    $moyenneFinale = 0.4 * $noteClasse + 0.6 * $noteExamen;
+                                } elseif ($noteClasse !== null) {
+                                    $moyenneFinale = $noteClasse;
+                                } elseif ($noteExamen !== null) {
+                                    $moyenneFinale = $noteExamen;
+                                }
                             }
                             // Crédits cumulés uniquement si la matière est validée
                             if ($moyenneFinale !== null && $moyenneFinale >= 10 && isset($n['credits'])) {
@@ -221,8 +245,21 @@ if (!$isDownload) {
     </table>
 
     <div class="footer-summary" style="margin-top:20px;border:1px solid #000;padding:10px;display:flex;justify-content:space-between;font-weight:bold;text-transform:uppercase;">
-        <div>TOTAL DES CREDITS CUMULÉS AU SEMESTRE <?= isset($semestreNumero) ? (int)$semestreNumero : 1 ?>: <?= isset($totalCreditsSem1) ? (int)$totalCreditsSem1 : 0 ?></div>
-        <div>MOYENNE SEMESTRE <?= isset($semestreNumero) ? (int)$semestreNumero : 1 ?>: <?= isset($moyenneSemestre1) ? number_format($moyenneSemestre1, 2, ',', ' ') : '0,00' ?></div>
+        <?php
+        $sessionAffichee = isset($sessionNumero) ? (int)$sessionNumero : 1;
+        if ($sessionAffichee < 1 || $sessionAffichee > 4) {
+            $sessionAffichee = 1;
+        }
+
+        if ($sessionAffichee === 1): ?>
+            <!-- Session 1 : on garde total des crédits cumulés (toutes sessions jusqu'à 1) + moyenne de semestre -->
+            <div>TOTAL DES CREDITS CUMULÉS AU SEMESTRE <?= isset($semestreNumero) ? (int)$semestreNumero : 1 ?>: <?= isset($totalCreditsCumul) ? (int)$totalCreditsCumul : 0 ?></div>
+            <div>MOYENNE SEMESTRE <?= isset($semestreNumero) ? (int)$semestreNumero : 1 ?>: <?= isset($moyenneSemestre1) ? number_format($moyenneSemestre1, 2, ',', ' ') : '0,00' ?></div>
+        <?php else: ?>
+            <!-- Sessions 2 à 4 : TOTAL DES CREDITS (obtenus pendant cette session) et TOTAL DES CREDITS CUMULÉS AU SEMESTRE (toutes sessions jusqu'à la session actuelle) -->
+            <div>TOTAL DES CREDITS: <?= isset($totalCreditsSem1) ? (int)$totalCreditsSem1 : 0 ?></div>
+            <div>TOTAL DES CREDITS CUMULÉS AU SEMESTRE <?= isset($semestreNumero) ? (int)$semestreNumero : 1 ?>: <?= isset($totalCreditsCumul) ? (int)$totalCreditsCumul : 0 ?></div>
+        <?php endif; ?>
     </div>
 
     <div class="appreciation" style="margin-top:15px;margin-bottom:30px;font-weight:bold;">
