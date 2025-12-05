@@ -8,6 +8,7 @@ class EtudiantController {
     private $etudiant;
     private $anneeModel;
     private $semestreModel;
+    private $notesClasseDebugRows = [];
     
     public function __construct() {
         $this->etudiant = new Etudiant();
@@ -147,61 +148,13 @@ class EtudiantController {
             'nb_matieres' => count($notes),
             'evolution_moyenne' => null
         ];
-        // Regrouper les notes de CLASSE par matière pour l'affichage "Mes notes de classe".
-        // On se base sur toutes les notes du semestre (sans filtrer par session), puis on choisit,
-        // pour chaque matière, la ligne la plus pertinente pour les notes de classe (notes1-5 / note).
-        $notes_par_matiere = [];
-        $notesClasseSource = [];
-        if (!empty($selectedSemestreId)) {
-            // On prend toutes les notes du semestre, sans filtrer par session,
-            // pour pouvoir retrouver la note de CLASSE la plus récente.
-            $notesClasseSource = $this->getNotes($selectedSemestreId, null);
-        } else {
-            $notesClasseSource = $notes;
-        }
-
-        // Pour chaque matière, on ne garde qu'une seule ligne :
-        // - celle qui possède une moyenne de classe (champ note non NULL)
-        // - et, en cas de doublon, la ligne avec l'id le plus élevé (dernière en base).
-        $parMatiere = [];
-        foreach ($notesClasseSource as $n) {
-            $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
-            if ($mid === 0) {
-                continue;
-            }
-
-            // Ignorer les lignes sans note de classe (par exemple, lignes ne contenant
-            // qu'une note d'examen).
-            if (!isset($n['note']) || $n['note'] === null || $n['note'] === '') {
-                continue;
-            }
-
-            $current = $parMatiere[$mid]['row'] ?? null;
-            $currentId = $current['id'] ?? 0;
-            $newId = isset($n['id']) ? (int)$n['id'] : 0;
-
-            if ($current === null || $newId > $currentId) {
-                $parMatiere[$mid] = [
-                    'row' => $n,
-                ];
-            }
-        }
-
-        foreach ($parMatiere as $mid => $data) {
-            $n = $data['row'];
-            $notes_par_matiere[] = [
-                'id' => $mid,
-                'nom' => $n['matiere_nom'] ?? '',
-                'note1' => isset($n['note1']) ? (float)$n['note1'] : null,
-                'note2' => isset($n['note2']) ? (float)$n['note2'] : null,
-                'note3' => isset($n['note3']) ? (float)$n['note3'] : null,
-                'note4' => isset($n['note4']) ? (float)$n['note4'] : null,
-                'note5' => isset($n['note5']) ? (float)$n['note5'] : null,
-                'moyenne' => isset($n['note']) ? (float)$n['note'] : null,
-            ];
-        }
+        // Notes de classe par matière pour "Mes notes de classe" :
+        // uniquement les lignes de notes saisies par les professeurs (session NULL),
+        // indépendamment des notes d'examen admin.
+        $notes_par_matiere = $this->getNotesClasseParMatiere($selectedSemestreId);
+        $notes_classe_debug_rows = $this->notesClasseDebugRows;
         $etudiant = $this->etudiant;
-        return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','notes_par_matiere','etudiant','annees','anneeActive','selectedAnneeId','semestresAnnee','selectedSemestreId','selectedSession','anneeTimeline');
+        return compact('notes','classe','moyennes','emploi','prochain_cours','dernieres_notes','documents_recents','evenements','stats','notes_par_matiere','notes_classe_debug_rows','etudiant','annees','anneeActive','selectedAnneeId','semestresAnnee','selectedSemestreId','selectedSession','anneeTimeline');
     }
 
     public function renderDashboard() {
@@ -267,6 +220,135 @@ class EtudiantController {
         
         $db = Database::getInstance();
         return $db->fetchAll($sql, $params);
+    }
+
+    /**
+     * Récupère, par matière, la dernière note de CLASSE saisie par un professeur
+     * (sessions null / 0) pour alimenter "Mes notes de classe - Détail".
+     */
+    private function getNotesClasseParMatiere($semestreId = null) {
+        $db = Database::getInstance();
+        $params = ['etudiant_id' => $this->etudiant['id']];
+        $semestreClause = '';
+
+        if ($semestreId) {
+            $semestreClause = ' AND n.semestre_id = :semestre_id';
+            $params['semestre_id'] = $semestreId;
+        }
+
+        $sql = "SELECT n.*, m.intitule AS matiere_nom
+                FROM notes n
+                JOIN matieres m ON n.matiere_id = m.id
+                WHERE n.etudiant_id = :etudiant_id
+                  $semestreClause
+                  AND (
+                        (n.note IS NOT NULL AND n.note <> 0)
+                        OR n.note1 IS NOT NULL
+                        OR n.note2 IS NOT NULL
+                        OR n.note3 IS NOT NULL
+                        OR n.note4 IS NOT NULL
+                        OR n.note5 IS NOT NULL
+                  )
+                ORDER BY n.id DESC";
+
+        $rows = $db->fetchAll($sql, $params);
+        $this->notesClasseDebugRows = $rows;
+        error_log('[EtudiantController] getNotesClasseParMatiere start — semestreId=' . ($semestreId ?? 'null') . ', rows=' . count($rows));
+        $parMatiere = [];
+
+        foreach ($rows as $row) {
+            $matiereId = isset($row['matiere_id']) ? (int)$row['matiere_id'] : 0;
+            if ($matiereId === 0) {
+                continue;
+            }
+
+            $sessionVal = $row['session'] ?? null;
+            $isClasse = ($sessionVal === null || $sessionVal === '' || (string)$sessionVal === '0');
+            error_log(sprintf('[EtudiantController] Row matiere=%d session=%s note=%s n1=%s n2=%s n3=%s n4=%s n5=%s',
+                $matiereId,
+                var_export($sessionVal, true),
+                var_export($row['note'] ?? null, true),
+                var_export($row['note1'] ?? null, true),
+                var_export($row['note2'] ?? null, true),
+                var_export($row['note3'] ?? null, true),
+                var_export($row['note4'] ?? null, true),
+                var_export($row['note5'] ?? null, true)
+            ));
+
+            $current = $parMatiere[$matiereId]['row'] ?? null;
+            $currentIsClasse = $parMatiere[$matiereId]['is_classe'] ?? false;
+            $currentId = $current['id'] ?? 0;
+            $rowId = isset($row['id']) ? (int)$row['id'] : 0;
+
+            if ($current === null) {
+                $parMatiere[$matiereId] = [
+                    'row' => $row,
+                    'is_classe' => $isClasse,
+                ];
+                continue;
+            }
+
+            if (!$currentIsClasse && $isClasse) {
+                // Remplacer un fallback examen par une vraie note de classe
+                $parMatiere[$matiereId] = [
+                    'row' => $row,
+                    'is_classe' => true,
+                ];
+                continue;
+            }
+
+            if ($currentIsClasse === $isClasse && $rowId > $currentId) {
+                $parMatiere[$matiereId] = [
+                    'row' => $row,
+                    'is_classe' => $isClasse,
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($parMatiere as $matiereId => $data) {
+            $row = $data['row'];
+            $result[] = [
+                'id' => $matiereId,
+                'nom' => $row['matiere_nom'] ?? '',
+                'note1' => isset($row['note1']) ? (float)$row['note1'] : null,
+                'note2' => isset($row['note2']) ? (float)$row['note2'] : null,
+                'note3' => isset($row['note3']) ? (float)$row['note3'] : null,
+                'note4' => isset($row['note4']) ? (float)$row['note4'] : null,
+                'note5' => isset($row['note5']) ? (float)$row['note5'] : null,
+                'moyenne' => $this->computeNoteClasseMoyenne($row),
+            ];
+            error_log(sprintf('[EtudiantController] Selected matiere=%d isClasse=%s moyenne=%s',
+                $matiereId,
+                $data['is_classe'] ? 'true' : 'false',
+                var_export(end($result)['moyenne'], true)
+            ));
+        }
+
+        error_log('[EtudiantController] getNotesClasseParMatiere done — returning ' . count($result) . ' matières');
+        return $result;
+    }
+
+    private function computeNoteClasseMoyenne(array $row) {
+        // 1) Si des notes partielles existent, on recalcule toujours la moyenne à partir de celles-ci
+        $values = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $key = 'note' . $i;
+            if (isset($row[$key]) && $row[$key] !== null && $row[$key] !== '') {
+                $values[] = (float)$row[$key];
+            }
+        }
+
+        if (!empty($values)) {
+            return array_sum($values) / count($values);
+        }
+
+        // 2) Sinon, on utilise la moyenne stockée dans note si elle existe
+        if (isset($row['note']) && $row['note'] !== null && $row['note'] !== '') {
+            return (float)$row['note'];
+        }
+
+        return null;
     }
 
     public function notesData() {
@@ -435,6 +517,14 @@ class EtudiantController {
                 }
                 $notes = $notesAggreg;
             }
+        }
+
+        // Recalculer systématiquement une moyenne de classe cohérente pour le bulletin
+        if (!empty($notes)) {
+            foreach ($notes as &$n) {
+                $n['note_classe_calculee'] = $this->computeNoteClasseMoyenne($n);
+            }
+            unset($n);
         }
 
         $classe = $this->getClasse();

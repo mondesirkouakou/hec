@@ -172,7 +172,13 @@ if (!$isDownload) {
                                 echo '<div style="width:100%;height:14px;background:repeating-linear-gradient(-45deg,#000 0,#000 1px,transparent 1px,transparent 3px);"></div>';
                             } else {
                                 // Session 1 : on affiche la vraie moyenne de classe
-                                echo isset($n['moyenne_classe']) ? number_format((float)$n['moyenne_classe'], 2, ',', ' ') : '-';
+                                if (isset($n['note_classe_calculee']) && $n['note_classe_calculee'] !== null && $n['note_classe_calculee'] !== '') {
+                                    echo number_format((float)$n['note_classe_calculee'], 2, ',', ' ');
+                                } elseif (isset($n['moyenne_classe'])) {
+                                    echo number_format((float)$n['moyenne_classe'], 2, ',', ' ');
+                                } else {
+                                    echo '-';
+                                }
                             }
                             ?>
                         </td>
@@ -180,10 +186,15 @@ if (!$isDownload) {
                         <td style="border:1px solid #000;padding:4px;">
                             <?= isset($n['note_examen']) ? number_format((float)$n['note_examen'], 2, ',', ' ') : '-' ?>
                         </td>
-                        <!-- Moyenne finale: 40% note de classe (note) / 60% note d'examen -->
+                        <!-- Moyenne finale: 40% note de classe / 60% note d'examen -->
                         <td style="border:1px solid #000;padding:4px;">
                             <?php
-                            $noteClasse = isset($n['note']) ? (float)$n['note'] : null;
+                            // On privilégie la moyenne de classe recalculée par le contrôleur si présente
+                            if (isset($n['note_classe_calculee']) && $n['note_classe_calculee'] !== null && $n['note_classe_calculee'] !== '') {
+                                $noteClasse = (float)$n['note_classe_calculee'];
+                            } else {
+                                $noteClasse = isset($n['note']) ? (float)$n['note'] : null;
+                            }
                             $noteExamen = isset($n['note_examen']) ? (float)$n['note_examen'] : null;
                             $moyenneFinale = null;
 

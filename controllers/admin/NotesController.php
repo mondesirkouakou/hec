@@ -30,12 +30,14 @@ class NotesController {
                     m.id as matiere_id,
                     m.intitule as matiere_nom,
                     c.id as classe_id,
-                    c.intitule as classe_nom
+                    c.intitule as classe_nom,
+                    s.numero as semestre_numero
                 FROM notes n
                 JOIN etudiants e ON n.etudiant_id = e.id
                 JOIN matieres m ON n.matiere_id = m.id
                 JOIN inscriptions i ON e.id = i.etudiant_id
                 JOIN classes c ON i.classe_id = c.id
+                JOIN semestres s ON n.semestre_id = s.id
                 WHERE n.statut = 'soumis'
                 ORDER BY c.intitule, m.intitule, e.nom, e.prenom";
 
