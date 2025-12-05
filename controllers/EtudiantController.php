@@ -153,11 +153,16 @@ class EtudiantController {
         $notes_par_matiere = [];
         $notesClasseSource = [];
         if (!empty($selectedSemestreId)) {
+            // On prend toutes les notes du semestre, sans filtrer par session,
+            // pour pouvoir retrouver la note de CLASSE la plus récente.
             $notesClasseSource = $this->getNotes($selectedSemestreId, null);
         } else {
             $notesClasseSource = $notes;
         }
 
+        // Pour chaque matière, on ne garde qu'une seule ligne :
+        // - celle qui possède une moyenne de classe (champ note non NULL)
+        // - et, en cas de doublon, la ligne avec l'id le plus élevé (dernière en base).
         $parMatiere = [];
         foreach ($notesClasseSource as $n) {
             $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
@@ -165,30 +170,19 @@ class EtudiantController {
                 continue;
             }
 
-            // Déterminer si cette ligne contient des notes de classe (note1..note5 / note)
-            $hasNotesPartielles = false;
-            for ($i = 1; $i <= 5; $i++) {
-                $key = 'note' . $i;
-                if (array_key_exists($key, $n) && $n[$key] !== null) {
-                    $hasNotesPartielles = true;
-                    break;
-                }
+            // Ignorer les lignes sans note de classe (par exemple, lignes ne contenant
+            // qu'une note d'examen).
+            if (!isset($n['note']) || $n['note'] === null || $n['note'] === '') {
+                continue;
             }
-            $hasMoyenneClasse = isset($n['note']) && $n['note'] !== null;
 
-            // Calcul d'un score pour choisir la meilleure ligne par matière
-            $score = 0;
-            if ($hasNotesPartielles) { $score += 10; }
-            if ($hasMoyenneClasse) { $score += 5; }
+            $current = $parMatiere[$mid]['row'] ?? null;
+            $currentId = $current['id'] ?? 0;
+            $newId = isset($n['id']) ? (int)$n['id'] : 0;
 
-            // On favorise les lignes sans session (lignes historiques de notes de classe)
-            $sessionNote = isset($n['session']) ? $n['session'] : null;
-            if ($sessionNote === null) { $score += 2; }
-
-            if (!isset($parMatiere[$mid]) || $score > $parMatiere[$mid]['score']) {
+            if ($current === null || $newId > $currentId) {
                 $parMatiere[$mid] = [
                     'row' => $n,
-                    'score' => $score,
                 ];
             }
         }
@@ -243,15 +237,30 @@ class EtudiantController {
                        cm.credits AS credits,
                        cm.coefficient AS coefficient,
                        s.numero AS semestre_numero,
-                       (SELECT AVG(n2.note)
-                          FROM notes n2
-                         WHERE n2.classe_id = n.classe_id
-                           AND n2.matiere_id = n.matiere_id
-                           AND n2.semestre_id = n.semestre_id) AS moyenne_classe
+                       mc.moyenne_classe
                 FROM notes n
                 JOIN matieres m ON n.matiere_id = m.id
                 JOIN semestres s ON n.semestre_id = s.id
                 LEFT JOIN classe_matiere cm ON cm.classe_id = n.classe_id AND cm.matiere_id = n.matiere_id
+                LEFT JOIN (
+                    SELECT
+                        t.matiere_id,
+                        t.semestre_id,
+                        AVG(t.note_classe) AS moyenne_classe
+                    FROM (
+                        SELECT
+                            n2.etudiant_id,
+                            n2.matiere_id,
+                            n2.semestre_id,
+                            MAX(n2.note) AS note_classe
+                        FROM notes n2
+                        WHERE n2.note IS NOT NULL
+                        GROUP BY n2.etudiant_id, n2.matiere_id, n2.semestre_id
+                    ) AS t
+                    GROUP BY t.matiere_id, t.semestre_id
+                ) AS mc
+                  ON mc.matiere_id = n.matiere_id
+                 AND mc.semestre_id = n.semestre_id
                 WHERE n.etudiant_id = :etudiant_id
                 $whereClause
                 ORDER BY s.numero, m.intitule";
