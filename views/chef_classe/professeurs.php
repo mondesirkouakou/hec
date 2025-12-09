@@ -33,10 +33,24 @@ ob_start();
                                 <option value="" disabled>Sélectionner une ou plusieurs matières</option>
                                 <?php
                                 $db = Database::getInstance();
-                                $matieresDisponibles = $db->fetchAll(
-                                    "SELECT * FROM matieres WHERE id NOT IN (SELECT DISTINCT matiere_id FROM affectation_professeur WHERE classe_id = :classe_id) ORDER BY intitule",
-                                    ['classe_id' => $classe['id']]
-                                );
+                                try {
+                                    $matieresDisponibles = $db->fetchAll(
+                                        "SELECT m.*
+                                         FROM matieres m
+                                         JOIN classe_matiere cm ON cm.matiere_id = m.id
+                                         WHERE cm.classe_id = :classe_id
+                                           AND m.id NOT IN (
+                                               SELECT DISTINCT matiere_id
+                                               FROM affectation_professeur
+                                               WHERE classe_id = :classe_id
+                                           )
+                                         ORDER BY m.intitule",
+                                        ['classe_id' => $classe['id']]
+                                    );
+                                } catch (Exception $e) {
+                                    $matieresDisponibles = [];
+                                }
+
                                 foreach ($matieresDisponibles as $m): ?>
                                     <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['intitule']) ?></option>
                                 <?php endforeach; ?>

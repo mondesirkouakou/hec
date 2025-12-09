@@ -54,7 +54,7 @@ ob_start();
                                         <?php if (!empty($classes)): ?>
                                             <?php foreach ($classes as $c): ?>
                                                 <a class="btn btn-sm btn-primary mb-1" href="<?= BASE_URL ?>professeur/notes/<?= (int)$c['id'] ?>/<?= (int)$m['id'] ?>">
-                                                    <?= htmlspecialchars($c['code'] ?? $c['intitule'] ?? 'Classe') ?>
+                                                    <?= htmlspecialchars($c['intitule'] ?? $c['code'] ?? 'Classe') ?>
                                                 </a>
                                             <?php endforeach; ?>
                                         <?php else: ?>

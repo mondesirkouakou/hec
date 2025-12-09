@@ -125,7 +125,9 @@ ob_start();
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Classes actives</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <?= isset($statsYear['classes_actives']) ? (int)$statsYear['classes_actives'] : 0 ?>
+                            </div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-school fa-2x text-gray-300"></i>
@@ -142,7 +144,11 @@ ob_start();
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Étudiants inscrits</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">1,245</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <?= isset($statsYear['etudiants_inscrits'])
+                                    ? number_format((int)$statsYear['etudiants_inscrits'], 0, ',', ' ')
+                                    : '0' ?>
+                            </div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-users fa-2x text-gray-300"></i>
@@ -159,7 +165,9 @@ ob_start();
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Enseignants
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">58</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <?= isset($statsYear['enseignants']) ? (int)$statsYear['enseignants'] : 0 ?>
+                            </div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
@@ -192,89 +200,43 @@ ob_start();
     <!-- Contenu principal -->
     <div class="row dashboard-row">
         <!-- Liste des actions rapides -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-12 mb-4">
+
             <div class="card animated-card actions-card rotate-3d">
                 <div class="card-header card-header-primary">
                     <h6 class="card-title">Actions rapides</h6>
                 </div>
                 <div class="card-body card-body-animated">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
                             <a href="<?= BASE_URL ?>admin/classes/nouvelle" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
                                 <i class="fas fa-plus-circle text-success mr-2"></i>
                                 Ajouter une classe
                             </a>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
                             <a href="<?= BASE_URL ?>admin/classes" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
                                 <i class="fas fa-user-plus text-info mr-2"></i>
                                 Gérer les classes
                             </a>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
                             <a href="<?= BASE_URL ?>admin/chefs-classe" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
                                 <i class="fas fa-user-tie text-warning mr-2"></i>
                                 Gérer chef de classe
                             </a>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="<?= BASE_URL ?>admin/notes/validation" class="btn btn-light btn-block text-left p-3 border">
-                                <i class="fas fa-check text-success mr-2"></i>
-                                Valider des notes
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
                             <a href="<?= BASE_URL ?>admin/notes/saisie" class="btn btn-light btn-block text-left p-3 border">
                                 <i class="fas fa-pen text-primary mr-2"></i>
                                 Saisir des notes
                             </a>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
                             <a href="<?= BASE_URL ?>admin/semestres" class="btn btn-light btn-block text-left p-3 border">
                                 <i class="fas fa-lock-open text-warning mr-2"></i>
                                 Gestion des semestres
                             </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dernières activités -->
-        <div class="col-lg-6 mb-4">
-            <div class="card animated-card activities-card rotate-3d">
-                <div class="card-header card-header-accent d-flex justify-content-between align-items-center">
-                    <h6 class="card-title">Activités récentes</h6>
-                    <a href="<?= BASE_URL ?>admin/activites" class="btn btn-sm btn-link ripple-effect">Voir tout</a>
-                </div>
-                <div class="card-body card-body-animated">
-                    <div class="activity-feed">
-                        <div class="feed-item d-flex mb-3 animated-item">
-                            <div class="feed-icon bg-primary text-white rounded-circle p-2 mr-3 ripple-effect">
-                                <i class="fas fa-user-plus"></i>
-                            </div>
-                            <div class="feed-content">
-                                <p class="mb-1"><strong>Nouveau chef de classe</strong> ajouté pour IDA1</p>
-                                <small class="text-muted">Il y a 2 heures</small>
-                            </div>
-                        </div>
-                        <div class="feed-item d-flex mb-3 animated-item">
-                            <div class="feed-icon bg-success text-white rounded-circle p-2 mr-3 ripple-effect">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="feed-content">
-                                <p class="mb-1">Liste des étudiants de <strong>IDA2</strong> validée</p>
-                                <small class="text-muted">Aujourd'hui, 10:45</small>
-                            </div>
-                        </div>
-                        <div class="feed-item d-flex animated-item">
-                            <div class="feed-icon bg-warning text-white rounded-circle p-2 mr-3 ripple-effect">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="feed-content">
-                                <p class="mb-1">3 listes en attente de validation</p>
-                                <small class="text-muted">Hier, 16:30</small>
-                            </div>
                         </div>
                     </div>
                 </div>

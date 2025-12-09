@@ -18,7 +18,8 @@ if (!$isDownload) {
 </div>
 <?php endif; ?>
 
-<div class="page" style="width:210mm;min-height:297mm;background-color:white;margin:0 auto;padding:15mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:11px;font-family:Arial,sans-serif;position:relative;padding-bottom:25mm;">
+<div class="page" style="width:210mm;min-height:297mm;background-color:white;margin:0 auto;padding:15mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:11px;font-family:Arial,sans-serif;position:relative;padding-bottom:25mm;display:flex;flex-direction:column;">
+    <div class="page-main" style="flex:1 0 auto;">
     <div class="header" style="margin-bottom:20px;text-transform:uppercase;font-weight:bold;line-height:1.4;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div style="text-align:left;">
@@ -38,7 +39,7 @@ if (!$isDownload) {
 
     <div class="student-info" style="border:1px solid #000;padding:10px;margin-bottom:20px;">
         <div class="info-row" style="display:flex;margin-bottom:5px;">
-            <div class="info-col" style="flex:1;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">MENTION:</span> <?= htmlspecialchars($classe['intitule'] ?? '') ?></div>
+            <div class="info-col" style="flex:1;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">CLASSE:</span> <?= htmlspecialchars($classe['intitule'] ?? '') ?></div>
             <div class="info-col" style="flex:1;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">PARCOURS:</span> LICENCE</div>
         </div>
         <div class="info-row" style="display:flex;margin-bottom:5px;">
@@ -156,9 +157,9 @@ if (!$isDownload) {
                         <td style="border:1px solid #000;padding:4px;">
                             <?= isset($n['credits']) ? (float)$n['credits'] : 0 ?>
                         </td>
-                        <!-- Coefficients : en l'absence de colonne spécifique, on réutilise credits -->
+                        <!-- Coefficients = champ coefficient saisi par l'admin (classe_matiere) -->
                         <td style="border:1px solid #000;padding:4px;">
-                            <?= isset($n['credits']) ? (float)$n['credits'] : 0 ?>
+                            <?= isset($n['coefficient']) ? (float)$n['coefficient'] : 0 ?>
                         </td>
                         <!-- Moyenne de classe réelle (session 1 uniquement) -->
                         <td style="border:1px solid #000;padding:4px;">
@@ -282,12 +283,14 @@ if (!$isDownload) {
         <span style="margin-left:10px;">FAIBLE <span class="checkbox" style="display:inline-block;width:12px;height:12px;border:1px solid #000;margin-right:5px;vertical-align:middle;"></span></span>
     </div>
 
-    <div class="signatures" style="position:absolute;right:15mm;bottom:95mm;text-align:center;">
+    <div class="signatures" style="margin-top:30px;text-align:right;">
         <div>Fait à Abidjan, le <?= date('d/m/Y') ?></div>
         <div style="margin-top:10px;font-weight:bold;text-decoration:underline;">LE DIRECTEUR PEDAGOGIQUE DELEGUE</div>
     </div>
 
-    <div class="page-footer" style="position:absolute;left:15mm;right:15mm;bottom:60mm;border-top:1px solid #000;padding-top:5px;text-align:center;font-size:9px;color:#444;">
+    </div><!-- /.page-main -->
+
+    <div class="page-footer" style="margin-top:10px;border-top:1px solid #000;padding-top:5px;text-align:center;font-size:9px;color:#444;">
         CC-02 193 40 RC 279162 Compte NSIA 21018102004 Centre impôts COCODY 17 BP 84 Abidjan 17 www.hec.ci / email: infos@hecabidjan.ci<br>
         Abidjan Cocody, route de l'Université boulevard F. Mitterrand face Ecole de Gendarmerie<br>
         Tél: (225) 27-22-48-48-13 / Fax (225) 27-22-48-48-14

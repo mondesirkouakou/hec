@@ -187,7 +187,44 @@ class DashboardController {
         } elseif ($semestreActif && $semestreActif['annee_universitaire_id'] == $selectedAnneeId) {
             $selectedSemestreId = (int)$semestreActif['id'];
         }
-        
+
+        // Statistiques agrégées par année universitaire sélectionnée
+        $statsYear = [
+            'classes_actives'      => 0,
+            'etudiants_inscrits'   => 0,
+            'enseignants'          => 0,
+        ];
+
+        if ($selectedAnneeId) {
+            // Classes actives : classes de l'année sélectionnée dont la liste est validée
+            $statsYear['classes_actives'] = (int)$this->db->fetchColumn(
+                "SELECT COUNT(*) FROM classes
+                 WHERE annee_universitaire_id = :annee_id
+                   AND (statut_listes = 'validee' OR statut_listes IS NULL OR statut_listes = '')",
+                ['annee_id' => $selectedAnneeId]
+            );
+
+            // Étudiants inscrits : inscriptions actives sur l'année sélectionnée
+            $statsYear['etudiants_inscrits'] = (int)$this->db->fetchColumn(
+                "SELECT COUNT(DISTINCT etudiant_id) FROM inscriptions
+                 WHERE annee_universitaire_id = :annee_id
+                   AND (statut IS NULL OR statut = 'actif')",
+                ['annee_id' => $selectedAnneeId]
+            );
+
+            // Enseignants : professeurs affectés au moins une fois sur cette année
+            $statsYear['enseignants'] = (int)$this->db->fetchColumn(
+                "SELECT COUNT(DISTINCT professeur_id) FROM affectation_professeur
+                 WHERE annee_universitaire_id = :annee_id",
+                ['annee_id' => $selectedAnneeId]
+            );
+        } else {
+            // Fallback : statistiques globales si aucune année n'est sélectionnée
+            $statsYear['classes_actives'] = (int)$this->classeModel->count();
+            $statsYear['etudiants_inscrits'] = (int)$this->etudiantModel->count();
+            $statsYear['enseignants'] = (int)$this->professeurModel->count();
+        }
+
         // Récupérer les classes de l'année sélectionnée pour la section "Liste des classes" du dashboard
         $classesDashboard = [];
         if ($selectedAnneeId) {

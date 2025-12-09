@@ -72,15 +72,15 @@ class NotesController {
 
         if ($classeId) {
             $matieres = $this->db->fetchAll(
-                "SELECT m.id, m.intitule 
-                 FROM matieres m 
-                 JOIN affectation_professeur ap ON ap.matiere_id = m.id 
-                 WHERE ap.classe_id = :cid 
+                "SELECT m.id, m.intitule
+                 FROM matieres m
+                 JOIN classe_matiere cm ON cm.matiere_id = m.id
+                 WHERE cm.classe_id = :cid
                  ORDER BY m.intitule",
                 ['cid' => $classeId]
             );
         } else {
-            $matieres = $this->db->fetchAll("SELECT id, intitule FROM matieres ORDER BY intitule");
+            $matieres = [];
         }
 
         if ($classeId && $semestreId && $matiereId) {

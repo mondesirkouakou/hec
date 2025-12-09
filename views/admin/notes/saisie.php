@@ -25,7 +25,7 @@ ob_start();
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Classe</label>
-                        <select name="classe_id" class="form-control" required>
+                        <select name="classe_id" class="form-control" required onchange="this.form.submit()">
                             <option value="">Choisir...</option>
                             <?php foreach ($classes as $c): ?>
                                 <option value="<?= (int)$c['id'] ?>" <?= ($classeId === (int)$c['id']) ? 'selected' : '' ?>><?= htmlspecialchars($c['intitule']) ?></option>
@@ -34,7 +34,7 @@ ob_start();
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Semestre (ouvert)</label>
-                        <select name="semestre_id" class="form-control" required>
+                        <select name="semestre_id" class="form-control" required onchange="this.form.submit()">
                             <option value="">Choisir...</option>
                             <?php foreach ($semestres as $s): ?>
                                 <option value="<?= (int)$s['id'] ?>" <?= ($semestreId === (int)$s['id']) ? 'selected' : '' ?>>Semestre <?= (int)$s['numero'] ?></option>
@@ -43,7 +43,7 @@ ob_start();
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Matière</label>
-                        <select name="matiere_id" class="form-control" required>
+                        <select name="matiere_id" class="form-control" required onchange="this.form.submit()">
                             <option value="">Choisir...</option>
                             <?php foreach ($matieres as $m): ?>
                                 <option value="<?= (int)$m['id'] ?>" <?= ($matiereId === (int)$m['id']) ? 'selected' : '' ?>><?= htmlspecialchars($m['intitule']) ?></option>

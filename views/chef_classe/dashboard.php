@@ -277,17 +277,25 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
                         <select name="matiere_id" class="form-control form-control-animated" required>
                             <option value="">Sélectionner une matière</option>
                             <?php
-                            // Récupérer les matières disponibles (non encore assignées)
+                            // Récupérer les matières disponibles (attribuées à la classe par l'admin et sans professeur pour cette classe)
                             $db = Database::getInstance();
-                            $matieresDisponibles = $db->fetchAll("
-                                SELECT * FROM matieres 
-                                WHERE id NOT IN (
-                                    SELECT DISTINCT matiere_id 
-                                    FROM affectation_professeur 
-                                    WHERE classe_id = :classe_id
-                                )
-                                ORDER BY intitule
-                            ", ['classe_id' => $classe['id']]);
+                            try {
+                                $matieresDisponibles = $db->fetchAll("
+                                    SELECT m.*
+                                    FROM matieres m
+                                    JOIN classe_matiere cm ON cm.matiere_id = m.id
+                                    WHERE cm.classe_id = :classe_id
+                                      AND m.id NOT IN (
+                                          SELECT DISTINCT matiere_id
+                                          FROM affectation_professeur
+                                          WHERE classe_id = :classe_id
+                                      )
+                                    ORDER BY m.intitule
+                                ", ['classe_id' => $classe['id']]);
+                            } catch (Exception $e) {
+                                $matieresDisponibles = [];
+                            }
+
                             foreach ($matieresDisponibles as $m): ?>
                                 <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['intitule']) ?></option>
                             <?php endforeach; ?>
