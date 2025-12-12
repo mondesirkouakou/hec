@@ -6,9 +6,6 @@ ob_start();
 <div class="page-header">
     <h1><i class="fas fa-user-graduate"></i> Gestion des étudiants</h1>
     <div class="page-actions">
-        <a href="/hec/admin/etudiants/ajouter" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Ajouter un étudiant
-        </a>
         <button class="btn btn-secondary" onclick="exportToExcel()">
             <i class="fas fa-file-export"></i> Exporter
         </button>

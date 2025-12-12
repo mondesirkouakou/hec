@@ -9,6 +9,7 @@ class ChefClasse extends User {
     protected $date_nomination;
     protected $classe_nom;
     protected $classe_niveau;
+    protected $user_id;
     
     // Tables de la base de données
     protected $table_chef_classe = 'chef_classe';
@@ -48,6 +49,7 @@ class ChefClasse extends User {
             $this->date_nomination = $data['date_nomination'];
             $this->classe_nom = $data['classe_nom'];
             $this->classe_niveau = $data['classe_niveau'];
+            $this->user_id = (int)$userId;
         }
     }
 
@@ -142,6 +144,8 @@ class ChefClasse extends User {
      */
     public function ajouterEtudiant($etudiantData) {
         try {
+            // Interdire les modifications si les listes ont déjà été soumises / validées
+            $this->ensureListesModifiables();
             $this->db->beginTransaction();
             
             // Vérifier si l'étudiant existe déjà
@@ -224,6 +228,8 @@ class ChefClasse extends User {
      */
     public function supprimerEtudiant($etudiantId) {
         try {
+            // Interdire les modifications si les listes ont déjà été soumises / validées
+            $this->ensureListesModifiables();
             // Vérifier que l'étudiant appartient bien à la classe
             $appartient = $this->db->fetchColumn(
                 "SELECT COUNT(*) FROM {$this->table_inscriptions} 
@@ -263,6 +269,8 @@ class ChefClasse extends User {
      */
     public function ajouterNouveauProfesseur($professeurData) {
         try {
+            // Interdire les modifications si les listes ont déjà été soumises / validées
+            $this->ensureListesModifiables();
             $this->db->beginTransaction();
             
             // Vérifier si l'email existe déjà
@@ -344,6 +352,8 @@ class ChefClasse extends User {
      */
     public function ajouterProfesseur($professeurId, $matiereId) {
         try {
+            // Interdire les modifications si les listes ont déjà été soumises / validées
+            $this->ensureListesModifiables();
             // Vérifier que la matière n'est pas déjà attribuée à un autre professeur
             $dejaAffecte = $this->db->fetchColumn(
                 "SELECT COUNT(*) FROM {$this->table_affectation} 
@@ -397,6 +407,8 @@ class ChefClasse extends User {
      */
     public function supprimerProfesseur($professeurId, $matiereId) {
         try {
+            // Interdire les modifications si les listes ont déjà été soumises / validées
+            $this->ensureListesModifiables();
             $this->db->execute(
                 "DELETE FROM {$this->table_affectation} 
                  WHERE professeur_id = :professeur_id 
@@ -418,11 +430,51 @@ class ChefClasse extends User {
     }
     
     /**
+     * Vérifie que les listes sont encore modifiables (avant soumission/validation).
+     *
+     * @throws Exception si les listes sont déjà soumises ou validées.
+     */
+    private function ensureListesModifiables() {
+        if (!$this->classe_id) {
+            return;
+        }
+
+        $row = $this->db->fetch(
+            "SELECT statut_listes FROM {$this->table_classes} WHERE id = :id",
+            ['id' => $this->classe_id]
+        );
+
+        $statut = $row['statut_listes'] ?? null;
+        if ($statut === 'en_attente' || $statut === 'validee') {
+            throw new Exception("Les listes ont déjà été soumises et ne peuvent plus être modifiées.");
+        }
+    }
+
+    /**
+     * Désactive le compte utilisateur du chef de classe après soumission des listes.
+     * Cela le rend "Inactif" dans l'écran admin et empêche toute nouvelle connexion
+     * tant qu'un admin n'a pas réactivé le compte.
+     */
+    private function desactiverCompteChefClasse() {
+        if (empty($this->user_id)) {
+            return;
+        }
+
+        $this->db->execute(
+            "UPDATE users SET is_active = 0 WHERE id = :id",
+            ['id' => (int)$this->user_id]
+        );
+    }
+
+    /**
      * Soumet les listes d'étudiants et de professeurs pour validation
      * @return bool True si la soumission a réussi, false sinon
      */
     public function soumettreListes() {
         try {
+            // Interdire une nouvelle soumission si les listes sont déjà figées
+            $this->ensureListesModifiables();
+
             // Vérifier que les listes ne sont pas vides
             $nbEtudiants = $this->db->fetchColumn(
                 "SELECT COUNT(*) FROM {$this->table_inscriptions} 
@@ -452,6 +504,9 @@ class ChefClasse extends User {
                  WHERE id = :id",
                 ['id' => $this->classe_id]
             );
+
+            // Désactiver le compte chef de classe pour empêcher toute nouvelle connexion
+            $this->desactiverCompteChefClasse();
             
             return true;
             

@@ -246,7 +246,7 @@ ob_start();
 
     <!-- Liste des classes -->
     <div class="card animated-card classes-card">
-        <div class="card-header card-header-secondary d-flex justify-content-between align-items-center">
+        <div class="card-header card-header-secondary">
             <?php
                 $labelAnneeClasses = '—';
                 if (!empty($selectedAnnee)) {
@@ -255,20 +255,52 @@ ob_start();
                     $labelAnneeClasses = ($anneeActive['annee_debut'] ?? '') . '-' . ($anneeActive['annee_fin'] ?? '');
                 }
             ?>
-            <h6 class="card-title">Liste des classes (<?= htmlspecialchars($labelAnneeClasses) ?>)</h6>
-            <div>
-                <button class="btn btn-sm btn-primary ripple-effect explosive-zoom">
-                    <i class="fas fa-download fa-sm"></i> Exporter
-                </button>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <h6 class="card-title mb-2 mb-md-0">Liste des classes (<?= htmlspecialchars($labelAnneeClasses) ?>)</h6>
+                <form class="w-100 w-md-auto" method="get" action="<?= BASE_URL ?>admin/dashboard">
+                    <?php if (!empty($selectedAnneeId)): ?>
+                        <input type="hidden" name="annee_id" value="<?= (int)$selectedAnneeId ?>">
+                    <?php endif; ?>
+                    <?php if (!empty($selectedSemestreId)): ?>
+                        <input type="hidden" name="semestre_id" value="<?= (int)$selectedSemestreId ?>">
+                    <?php endif; ?>
+                    <div class="input-group input-group-sm mx-auto" style="max-width:360px;">
+                        <input type="text" name="search_matricule" class="form-control" placeholder="Matricule étudiant..." value="<?= htmlspecialchars($searchMatricule ?? '') ?>">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
         <div class="card-body card-body-animated">
+            <?php if (!empty($searchMatricule)): ?>
+                <div class="mb-3">
+                    <?php if (!empty($etudiantRecherche)): ?>
+                        <div class="alert alert-success small mb-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Étudiant trouvé :</strong>
+                                <?= htmlspecialchars($etudiantRecherche['matricule'] ?? '') ?> —
+                                <?= htmlspecialchars(($etudiantRecherche['prenom'] ?? '') . ' ' . ($etudiantRecherche['nom'] ?? '')) ?>
+                                <?php if (!empty($etudiantRecherche['classe_intitule'])): ?>
+                                    (<span class="text-muted">Classe <?= htmlspecialchars($etudiantRecherche['classe_intitule']) ?></span>)
+                                <?php endif; ?>
+                            </div>
+                            <div>
+                                <a href="<?= BASE_URL ?>admin/etudiants/<?= (int)($etudiantRecherche['id'] ?? 0) ?>/bulletin" class="btn btn-sm btn-outline-primary">Voir le bulletin</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-warning small mb-0">Aucun étudiant trouvé pour le matricule "<?= htmlspecialchars($searchMatricule) ?>".</div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="table-responsive">
                 <table class="table table-bordered animated-table" id="dataTable" width="100%" cellspacing="0">
                     <thead class="table-header-primary">
                         <tr>
                             <th>Classe</th>
-                            <th>Chef de classe</th>
                             <th>Étudiants</th>
                             <th>Statut liste</th>
                             <th>Actions</th>
@@ -282,13 +314,6 @@ ob_start();
                                     <strong><?= htmlspecialchars($classe['intitule'] ?? '') ?></strong>
                                     <?php if (!empty($classe['code'])): ?>
                                         <br><small class="text-muted"><?= htmlspecialchars($classe['code']) ?></small>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($classe['chef_classe_nom'])): ?>
-                                        <?= htmlspecialchars($classe['chef_classe_nom']) ?>
-                                    <?php else: ?>
-                                        <span class="text-muted">Non assigné</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -309,15 +334,13 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="<?= BASE_URL ?>admin/classes/<?= (int)$classe['id'] ?>" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
+                                    <a href="<?= BASE_URL ?>admin/classes/<?= (int)$classe['id'] ?>" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="5" class="text-center text-muted">Aucune classe pour l'année active.</td>
+                            <td colspan="4" class="text-center text-muted">Aucune classe pour l'année active.</td>
                         </tr>
                     <?php endif; ?>
                     </tbody>

@@ -190,6 +190,7 @@ class EtudiantController {
                        cm.credits AS credits,
                        cm.coefficient AS coefficient,
                        s.numero AS semestre_numero,
+                       s.annee_universitaire_id,
                        mc.moyenne_classe
                 FROM notes n
                 JOIN matieres m ON n.matiere_id = m.id
@@ -353,15 +354,38 @@ class EtudiantController {
 
     public function notesData() {
         $db = Database::getInstance();
+        $anneeActive = $this->anneeModel->getActiveYear();
+        $anneeActiveId = $anneeActive ? (int)$anneeActive['id'] : null;
+
         $filters = [
             'semestre_id' => isset($_GET['semestre_id']) && $_GET['semestre_id'] !== '' ? (int)$_GET['semestre_id'] : null,
             'matiere_id' => isset($_GET['matiere_id']) && $_GET['matiere_id'] !== '' ? (int)$_GET['matiere_id'] : null,
         ];
+
         $notes = $this->getNotes($filters['semestre_id']);
+
+        if ($anneeActiveId !== null) {
+            $notes = array_values(array_filter($notes, function ($n) use ($anneeActiveId) {
+                if (!isset($n['annee_universitaire_id'])) {
+                    return true;
+                }
+                return (int)$n['annee_universitaire_id'] === $anneeActiveId;
+            }));
+        }
+
         if ($filters['matiere_id']) {
             $notes = array_values(array_filter($notes, function($n) use ($filters) { return (int)$n['matiere_id'] === $filters['matiere_id']; }));
         }
-        $semestres = $db->fetchAll("SELECT id, CONCAT('Semestre ', numero) AS nom FROM semestres ORDER BY numero");
+
+        if ($anneeActiveId !== null) {
+            $semestres = $db->fetchAll(
+                "SELECT id, CONCAT('Semestre ', numero) AS nom FROM semestres WHERE annee_universitaire_id = :annee_id ORDER BY numero",
+                ['annee_id' => $anneeActiveId]
+            );
+        } else {
+            $semestres = $db->fetchAll("SELECT id, CONCAT('Semestre ', numero) AS nom FROM semestres ORDER BY numero");
+        }
+
         $matieres = $db->fetchAll("SELECT id, intitule AS nom FROM matieres ORDER BY intitule");
         $stats = [
             'moyenne_generale' => count($notes) ? array_sum(array_map(function($n){return (float)$n['note'];}, $notes))/count($notes) : 0,
@@ -404,21 +428,41 @@ class EtudiantController {
                 'evolution' => null,
             ];
         }
-        $bySem = [];
+        // Préparer les données du graphique : une entrée par matière
+        // (moyenne de classe et moyenne d'examen sur l'année en cours)
+        $parMatiereGraph = [];
         foreach ($notes as $n) {
-            $sn = $n['semestre_numero'] ?? null;
-            if ($sn === null) { continue; }
-            if (!isset($bySem[$sn])) { $bySem[$sn] = []; }
-            $bySem[$sn][] = (float)($n['note'] ?? 0);
+            $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
+            if ($mid === 0) {
+                continue;
+            }
+
+            if (!isset($parMatiereGraph[$mid])) {
+                $parMatiereGraph[$mid] = [
+                    'nom' => $n['matiere_nom'] ?? ('Matière ' . $mid),
+                    'notes_classe' => [],
+                    'notes_examen' => [],
+                ];
+            }
+
+            if (isset($n['note']) && $n['note'] !== null) {
+                $parMatiereGraph[$mid]['notes_classe'][] = (float)$n['note'];
+            }
+            if (isset($n['note_examen']) && $n['note_examen'] !== null) {
+                $parMatiereGraph[$mid]['notes_examen'][] = (float)$n['note_examen'];
+            }
         }
-        ksort($bySem);
+
+        // Construit le tableau utilisé par la vue pour Chart.js
         $graphique_evolution = [];
-        foreach ($bySem as $numero => $arr) {
-            $moy = count($arr) ? array_sum($arr)/count($arr) : 0;
+        foreach ($parMatiereGraph as $mid => $dataGraph) {
+            $moyenneClasse = count($dataGraph['notes_classe']) ? array_sum($dataGraph['notes_classe']) / count($dataGraph['notes_classe']) : 0;
+            $moyenneExamen = count($dataGraph['notes_examen']) ? array_sum($dataGraph['notes_examen']) / count($dataGraph['notes_examen']) : 0;
+
             $graphique_evolution[] = [
-                'periode' => 'Semestre '.$numero,
-                'moyenne_etudiant' => $moy,
-                'moyenne_classe' => null
+                'periode' => $dataGraph['nom'],
+                'moyenne_classe_etudiant' => $moyenneClasse,
+                'moyenne_examen_etudiant' => $moyenneExamen,
             ];
         }
         return compact('semestres','matieres','filters','stats','notes_par_matiere','graphique_evolution');

@@ -5,11 +5,7 @@ ob_start();
 
 <div class="page-header">
     <h1><i class="fas fa-chalkboard-teacher"></i> Gestion des professeurs</h1>
-    <div class="page-actions">
-        <a href="/hec/admin/professeurs/ajouter" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Ajouter un professeur
-        </a>
-    </div>
+    <div class="page-actions"></div>
 </div>
 
 <div class="card">

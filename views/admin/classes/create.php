@@ -10,6 +10,9 @@ ob_start();
             <a href="<?= BASE_URL ?>admin/classes" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Retour à la liste
             </a>
+            <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-sm btn-outline-primary ms-2">
+                <i class="fas fa-tachometer-alt"></i> Retour au dashboard
+            </a>
         </div>
     </div>
 

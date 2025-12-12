@@ -17,6 +17,21 @@ switch ($path) {
         $controller->index();
         break;
 
+    // Bulletin d'un étudiant (vue admin)
+    case (preg_match('/^\/etudiants\/(\d+)\/bulletin$/', $path) ? true : false):
+        require_once __DIR__ . '/../controllers/admin/EtudiantBulletinAdminController.php';
+        $controller = new EtudiantBulletinAdminController();
+
+        $parts = explode('/', trim($path, '/'));
+        $id = isset($parts[1]) ? (int)$parts[1] : 0;
+        if ($id > 0) {
+            $controller->bulletin($id);
+        } else {
+            http_response_code(400);
+            echo 'Bad Request: ID étudiant invalide.';
+        }
+        break;
+
     // Gestion des notes
     case (preg_match('/^\/notes(\/.*)?$/', $path) ? true : false):
         require_once __DIR__ . '/../controllers/admin/NotesController.php';

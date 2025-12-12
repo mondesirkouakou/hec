@@ -5,47 +5,17 @@ ob_start();
 
 <div class="page-header">
     <h1><i class="fas fa-chart-line"></i> Mes notes</h1>
-    <div class="header-actions">
-        <button class="btn btn-outline-primary" onclick="window.print()">
-            <i class="fas fa-print"></i> Imprimer
-        </button>
-        <button class="btn btn-outline-secondary" id="exportPdf">
-            <i class="fas fa-file-pdf"></i> Exporter en PDF
-        </button>
-    </div>
+</div>
+
+<div class="mb-3">
+    <a href="<?= BASE_URL ?>etudiant/dashboard" class="btn btn-sm btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour au dashboard
+    </a>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <div class="filters-container">
-            <div class="form-group">
-                <label for="semestreFilter">Semestre</label>
-                <select class="form-control" id="semestreFilter">
-                    <option value="">Tous les semestres</option>
-                    <?php foreach ($semestres as $semestre): ?>
-                        <option value="<?= $semestre['id'] ?>" <?= ($filters['semestre_id'] ?? '') == $semestre['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($semestre['nom']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="matiereFilter">Matière</label>
-                <select class="form-control" id="matiereFilter">
-                    <option value="">Toutes les matières</option>
-                    <?php foreach ($matieres as $matiere): ?>
-                        <option value="<?= $matiere['id'] ?>" <?= ($filters['matiere_id'] ?? '') == $matiere['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($matiere['nom']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <button class="btn btn-primary" id="applyFilters">
-                <i class="fas fa-filter"></i> Appliquer
-            </button>
-        </div>
+        Statistiques et diagramme de mes moyennes (année en cours)
     </div>
     
     <div class="card-body">
@@ -82,19 +52,6 @@ ob_start();
                         </div>
                     </div>
                 </div>
-                
-                <div class="summary-card">
-                    <div class="summary-icon bg-info">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div class="summary-content">
-                        <h3>Rang</h3>
-                        <div class="summary-value"><?= $stats['rang'] ?? 'N/A' ?><small>e</small></div>
-                        <div class="summary-detail">
-                            sur <?= $stats['effectif_classe'] ?? 0 ?> étudiants
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <!-- Graphique d'évolution -->
@@ -103,61 +60,7 @@ ob_start();
             </div>
             
             <!-- Détail par matière -->
-            <div class="matieres-container">
-                <?php foreach ($notes_par_matiere as $matiere): ?>
-                    <div class="matiere-card">
-                        <div class="matiere-header">
-                            <h3><?= htmlspecialchars($matiere['nom']) ?></h3>
-                            <div class="matiere-moyenne">
-                                <span class="badge <?= $matiere['moyenne'] >= 10 ? 'badge-success' : 'badge-danger' ?>">
-                                    <?= number_format($matiere['moyenne'], 2, ',', ' ') ?>/20
-                                </span>
-                                <small>Moyenne</small>
-                            </div>
-                        </div>
-                        
-                        <div class="matiere-body">
-                            <div class="notes-list">
-                                <?php foreach ($matiere['evaluations'] as $evaluation): ?>
-                                    <div class="note-item">
-                                        <div class="note-type">
-                                            <span class="badge badge-light"><?= htmlspecialchars($evaluation['type']) ?></span>
-                                            <span class="text-muted"><?= date('d/m/Y', strtotime($evaluation['date_evaluation'])) ?></span>
-                                        </div>
-                                        <div class="note-value <?= $evaluation['valeur'] >= 10 ? 'text-success' : 'text-danger' ?>">
-                                            <?= number_format($evaluation['valeur'], 2, ',', ' ') ?>/20
-                                            <small class="text-muted">(Coef. <?= $evaluation['coefficient'] ?>)</small>
-                                        </div>
-                                        <?php if (!empty($evaluation['appreciation'])): ?>
-                                            <div class="note-appreciation">
-                                                <i class="fas fa-comment text-muted"></i>
-                                                <?= htmlspecialchars($evaluation['appreciation']) ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                            
-                            <div class="matiere-stats">
-                                <div class="stat-item">
-                                    <div class="stat-label">Moyenne de classe</div>
-                                    <div class="stat-value"><?= number_format($matiere['moyenne_classe'] ?? 0, 2, ',', ' ') ?>/20</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">Rang</div>
-                                    <div class="stat-value"><?= $matiere['rang'] ?? 'N/A' ?>/<?= $matiere['effectif'] ?? 0 ?></div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">Évolution</div>
-                                    <div class="stat-value <?= ($matiere['evolution'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
-                                        <?= ($matiere['evolution'] ?? 0) >= 0 ? '+' : '' ?><?= number_format($matiere['evolution'] ?? 0, 1, ',', ' ') ?>%
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+            <div class="matieres-container" style="display:none;"></div>
         <?php endif; ?>
     </div>
 </div>
@@ -173,14 +76,14 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: <?= json_encode(array_column($graphique_evolution, 'periode')) ?>,
             datasets: [{
-                label: 'Votre moyenne',
-                data: <?= json_encode(array_column($graphique_evolution, 'moyenne_etudiant')) ?>,
+                label: 'Moyenne de classe (CC)',
+                data: <?= json_encode(array_column($graphique_evolution, 'moyenne_classe_etudiant')) ?>,
                 borderColor: 'rgb(75, 192, 192)',
                 tension: 0.1,
                 fill: false
             }, {
-                label: 'Moyenne de la classe',
-                data: <?= json_encode(array_column($graphique_evolution, 'moyenne_classe')) ?>,
+                label: 'Moyenne d\'examen',
+                data: <?= json_encode(array_column($graphique_evolution, 'moyenne_examen_etudiant')) ?>,
                 borderColor: 'rgb(255, 99, 132)',
                 tension: 0.1,
                 borderDash: [5, 5],
@@ -210,25 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-    });
-
-    // Gestion des filtres
-    document.getElementById('applyFilters').addEventListener('click', function() {
-        const semestreId = document.getElementById('semestreFilter').value;
-        const matiereId = document.getElementById('matiereFilter').value;
-        
-        let url = new URL(window.location.href);
-        url.searchParams.set('semestre_id', semestreId);
-        url.searchParams.set('matiere_id', matiereId);
-        
-        window.location.href = url.toString();
-    });
-
-    // Export PDF
-    document.getElementById('exportPdf').addEventListener('click', function() {
-        // Implémentation de l'export PDF
-        alert('Fonctionnalité d\'export PDF à implémenter');
-        // window.location.href = '/etudiant/notes/export-pdf?' + new URLSearchParams(<?= json_encode($filters) ?>).toString();
     });
 });
 </script>

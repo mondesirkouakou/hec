@@ -234,7 +234,34 @@ class DashboardController {
 
         $classesEnAttente = $this->classeModel->getClassesEnAttenteValidation();
         $nbListesEnAttente = is_array($classesEnAttente) ? count($classesEnAttente) : 0;
-        
+
+        // Recherche d'étudiant par matricule depuis le dashboard
+        $searchMatricule = isset($_GET['search_matricule']) ? trim($_GET['search_matricule']) : '';
+        $etudiantRecherche = null;
+
+        if ($searchMatricule !== '') {
+            $params = ['matricule' => $searchMatricule];
+
+            $sql = "SELECT e.*, u.email, u.is_active,
+                           c.id AS classe_id, c.intitule AS classe_intitule,
+                           au.id AS annee_id, au.annee_debut, au.annee_fin
+                    FROM etudiants e
+                    JOIN users u ON e.user_id = u.id
+                    JOIN inscriptions i ON e.id = i.etudiant_id
+                    JOIN classes c ON i.classe_id = c.id
+                    JOIN annees_universitaires au ON c.annee_universitaire_id = au.id
+                    WHERE e.matricule = :matricule";
+
+            if ($selectedAnneeId) {
+                $sql .= " AND au.id = :annee_id";
+                $params['annee_id'] = $selectedAnneeId;
+            }
+
+            $sql .= " LIMIT 1";
+
+            $etudiantRecherche = $this->db->fetch($sql, $params);
+        }
+
         // Inclure la vue du tableau de bord
         include __DIR__ . '/../../views/admin/dashboard.php';
     }

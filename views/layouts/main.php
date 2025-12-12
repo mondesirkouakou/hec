@@ -9,30 +9,43 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/theme-custom.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/theme-custom.css?v=3">
 </head>
 <body>
-    <header class="animated-header reflection-effect">
+    <header class="animated-header">
         <div class="container">
             <div class="header-content">
                 <h1 class="logo-title"><a href="<?= BASE_URL ?>">Portail HEC Abidjan</a></h1>
                 <nav class="animated-nav">
                     <?php if (isset($_SESSION['user_id'])): ?>
-                        <div class="user-info">
-                            <span class="welcome-text heartbeat">Bienvenue, <?= htmlspecialchars($_SESSION['display_name'] ?? $_SESSION['username']) ?></span>
-                            <div class="user-avatar">
-                                <i class="fas fa-user-circle fa-lg"></i>
-                            </div>
-                        </div>
-                        <div class="nav-actions">
-                            <a href="<?= BASE_URL ?>profile" class="nav-link ripple-effect explosive-zoom magnetic-effect">
-                                <i class="fas fa-user"></i> 
-                                <span>Mon Profil</span>
-                            </a>
-                            <a href="<?= BASE_URL ?>logout" class="nav-link ripple-effect explosive-zoom magnetic-effect logout-link">
-                                <i class="fas fa-sign-out-alt"></i> 
-                                <span>Déconnexion</span>
-                            </a>
+                        <div class="user-dropdown">
+                            <button type="button" class="d-flex align-items-center p-0 border-0 bg-transparent text-decoration-none" id="userDropdown" style="color: inherit; cursor: pointer;">
+                                <span class="welcome-text heartbeat me-2 d-none d-md-inline">Bienvenue, <?= htmlspecialchars($_SESSION['display_name'] ?? $_SESSION['username']) ?></span>
+                                <div class="user-avatar">
+                                    <i class="fas fa-user-circle fa-2x"></i>
+                                </div>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in" id="userMenu" aria-labelledby="userDropdown" style="z-index: 2000;">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center" href="#" id="themeToggle">
+                                        <i class="fas fa-moon me-2 w-20"></i>
+                                        <span id="themeLabel">Mode Sombre</span>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center" href="<?= BASE_URL ?>change-password">
+                                        <i class="fas fa-key me-2 w-20"></i>
+                                        Changer mot de passe
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center text-danger" href="<?= BASE_URL ?>logout">
+                                        <i class="fas fa-sign-out-alt me-2 w-20"></i>
+                                        Déconnexion
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     <?php else: ?>
                         <a href="<?= BASE_URL ?>login" class="nav-logo-link">
@@ -103,7 +116,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="<?= BASE_URL ?>assets/js/main.js"></script>
+    <script src="<?= BASE_URL ?>assets/js/main.js?v=2"></script>
     <script src="<?= BASE_URL ?>assets/js/theme-effects.js"></script>
 </body>
 </html>

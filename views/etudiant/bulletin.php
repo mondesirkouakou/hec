@@ -8,19 +8,63 @@ if (!$isDownload) {
 ?>
 
 <?php if (!$isDownload): ?>
+<?php
+// Mode bulletin admin : possibilité de choisir semestre et session
+$adminBulletinMode = isset($isAdminBulletin) && $isAdminBulletin
+    && isset($semestresDisponibles) && is_array($semestresDisponibles) && count($semestresDisponibles) > 0;
+
+// URL et libellé du bouton de retour selon le contexte
+if ($adminBulletinMode) {
+    $backUrl = BASE_URL . 'admin/dashboard';
+    $backLabel = 'Retour au dashboard admin';
+} else {
+    $backUrl = BASE_URL . 'etudiant/dashboard';
+    $backLabel = 'Retour au dashboard';
+}
+?>
 <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-    <a href="<?= BASE_URL ?>etudiant/dashboard" class="btn btn-sm btn-secondary">
-        <i class="fas fa-arrow-left"></i> Retour au dashboard
+    <a href="<?= htmlspecialchars($backUrl) ?>" class="btn btn-sm btn-secondary">
+        <i class="fas fa-arrow-left"></i> <?= htmlspecialchars($backLabel) ?>
     </a>
     <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.print();">
         <i class="fas fa-print"></i> Imprimer mon bulletin
     </button>
 </div>
+<?php if ($adminBulletinMode): ?>
+    <div class="no-print mb-3">
+        <form method="get" action="<?= htmlspecialchars($adminBulletinBaseUrl ?? '') ?>" class="d-flex flex-wrap align-items-end" style="gap:8px;">
+            <div>
+                <label class="form-label" style="font-weight:bold;font-size:12px;">Semestre</label>
+                <select name="semestre_id" class="form-select form-select-sm">
+                    <?php foreach ($semestresDisponibles as $sem): ?>
+                        <option value="<?= (int)$sem['id'] ?>" <?= (isset($semestreId) && (int)$semestreId === (int)$sem['id'] ? 'selected' : '') ?>>
+                            Semestre <?= (int)$sem['numero'] ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" style="font-weight:bold;font-size:12px;">Session</label>
+                <select name="session" class="form-select form-select-sm">
+                    <?php
+                    $sessCourante = isset($sessionNumero) ? (int)$sessionNumero : 1;
+                    if ($sessCourante < 1 || $sessCourante > 4) { $sessCourante = 1; }
+                    for ($s = 1; $s <= 4; $s++): ?>
+                        <option value="<?= $s ?>" <?= $sessCourante === $s ? 'selected' : '' ?>>Session <?= $s ?></option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-sm btn-primary">Afficher</button>
+            </div>
+        </form>
+    </div>
+<?php endif; ?>
 <?php endif; ?>
 
-<div class="page" style="width:210mm;min-height:297mm;background-color:white;margin:0 auto;padding:15mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:11px;font-family:Arial,sans-serif;position:relative;padding-bottom:25mm;display:flex;flex-direction:column;">
+<div class="page" style="width:210mm;min-height:297mm;background-color:white;margin:0 auto;padding:12mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:14px;font-family:Arial,sans-serif;position:relative;padding-bottom:6mm;display:flex;flex-direction:column;">
     <div class="page-main" style="flex:1 0 auto;">
-    <div class="header" style="margin-bottom:20px;text-transform:uppercase;font-weight:bold;line-height:1.4;">
+    <div class="header" style="margin-bottom:15px;text-transform:uppercase;font-weight:bold;line-height:1.4;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div style="text-align:left;">
                 MINISTERE DE L'ENSEIGNEMENT SUPERIEUR<br>
@@ -37,7 +81,7 @@ if (!$isDownload) {
         </div>
     </div>
 
-    <div class="student-info" style="border:1px solid #000;padding:10px;margin-bottom:20px;">
+    <div class="student-info" style="border:1px solid #000;padding:8px;margin-bottom:15px;">
         <div class="info-row" style="display:flex;margin-bottom:5px;">
             <div class="info-col" style="flex:1;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">CLASSE:</span> <?= htmlspecialchars($classe['intitule'] ?? '') ?></div>
             <div class="info-col" style="flex:1;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">PARCOURS:</span> LICENCE</div>
@@ -62,7 +106,7 @@ if (!$isDownload) {
                 echo htmlspecialchars(trim($dateNaissFormatee . (!empty($lieuNaiss) ? ' à ' . $lieuNaiss : '')));
                 ?>
             </div>
-            <div class="info-col" style="flex:1;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">N° MATRICULE:</span> <?= htmlspecialchars($etudiant['matricule'] ?? '') ?></div>
+            <div class="info-col" style="flex:1;margin-left:30px;"><span class="label" style="font-weight:bold;display:inline-block;min-width:80px;">N° MATRICULE:</span> <?= htmlspecialchars($etudiant['matricule'] ?? '') ?></div>
         </div>
         <div class="info-row" style="display:flex;margin-bottom:5px;">
             <div class="info-col" style="flex:1;">
@@ -114,10 +158,10 @@ if (!$isDownload) {
             $semestreNumero = isset($notes[0]['semestre_numero']) ? (int)$notes[0]['semestre_numero'] : 1;
         }
     ?>
-    <div class="sub-header" style="text-align:center;font-weight:bold;margin-bottom:15px;">SEMESTRE <?= (int)$semestreNumero ?></div>
+    <div class="sub-header" style="text-align:center;font-weight:bold;margin-bottom:10px;">SEMESTRE <?= (int)$semestreNumero ?></div>
 
     <!-- Tableau des notes dynamique basé sur $notes -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:10px;">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:13px;">
         <thead>
             <tr>
                 <th style="border:1px solid #000;padding:4px;">ELEMENT CONSTITUTIF DE L'UNITE D'ENSEIGNEMENT (E.C.U.E)</th>
@@ -256,7 +300,7 @@ if (!$isDownload) {
         </tbody>
     </table>
 
-    <div class="footer-summary" style="margin-top:20px;border:1px solid #000;padding:10px;display:flex;justify-content:space-between;font-weight:bold;text-transform:uppercase;">
+    <div class="footer-summary" style="margin-top:10px;border:1px solid #000;padding:8px;display:flex;justify-content:space-between;font-weight:bold;text-transform:uppercase;">
         <?php
         $sessionAffichee = isset($sessionNumero) ? (int)$sessionNumero : 1;
         if ($sessionAffichee < 1 || $sessionAffichee > 4) {
@@ -274,7 +318,7 @@ if (!$isDownload) {
         <?php endif; ?>
     </div>
 
-    <div class="appreciation" style="margin-top:15px;margin-bottom:30px;font-weight:bold;">
+    <div class="appreciation" style="margin-top:10px;margin-bottom:20px;font-weight:bold;">
         APPRECIATION DU JURY:
         <span style="margin-left:20px;">TRÈS BIEN <span class="checkbox" style="display:inline-block;width:12px;height:12px;border:1px solid #000;margin-right:5px;vertical-align:middle;"></span></span>
         <span style="margin-left:10px;">BIEN <span class="checkbox" style="display:inline-block;width:12px;height:12px;border:1px solid #000;margin-right:5px;vertical-align:middle;"></span></span>
@@ -283,14 +327,14 @@ if (!$isDownload) {
         <span style="margin-left:10px;">FAIBLE <span class="checkbox" style="display:inline-block;width:12px;height:12px;border:1px solid #000;margin-right:5px;vertical-align:middle;"></span></span>
     </div>
 
-    <div class="signatures" style="margin-top:30px;text-align:right;">
+    <div class="signatures" style="margin-top:20px;text-align:right;">
         <div>Fait à Abidjan, le <?= date('d/m/Y') ?></div>
         <div style="margin-top:10px;font-weight:bold;text-decoration:underline;">LE DIRECTEUR PEDAGOGIQUE DELEGUE</div>
     </div>
 
     </div><!-- /.page-main -->
 
-    <div class="page-footer" style="margin-top:10px;border-top:1px solid #000;padding-top:5px;text-align:center;font-size:9px;color:#444;">
+    <div class="page-footer" style="margin-top:20mm;border-top:1px solid #000;padding-top:5px;text-align:center;font-size:10px;color:#444;">
         CC-02 193 40 RC 279162 Compte NSIA 21018102004 Centre impôts COCODY 17 BP 84 Abidjan 17 www.hec.ci / email: infos@hecabidjan.ci<br>
         Abidjan Cocody, route de l'Université boulevard F. Mitterrand face Ecole de Gendarmerie<br>
         Tél: (225) 27-22-48-48-13 / Fax (225) 27-22-48-48-14
@@ -307,21 +351,26 @@ if (!$isDownload) {
 <style>
 @page {
     size: A4;
-    margin: 8mm 10mm; /* haut/bas 8mm, gauche/droite 10mm */
+    margin: 15mm; /* marges 1,5 cm tout autour */
 }
 
 @media print {
+    body { margin: 0; background: white; }
     body * { visibility: hidden; }
     .page, .page * { visibility: visible; }
     .no-print { display: none !important; }
 
     .page {
         box-shadow: none !important;
-        width: auto !important;
-        margin: -5mm auto 0 auto !important;   /* léger décalage vers le haut, tout en restant visible */
-        padding-top: 0 !important;  /* enlève les 15mm de padding haut définis pour l’écran */
-        padding-left: 5mm !important;
-        padding-right: 5mm !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    .page-main {
+        flex: 1;
     }
 }
 </style>

@@ -5,7 +5,7 @@ ob_start();
 
 <div class="container-fluid admin-dashboard">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="dashboard-title">Semestre <?= (int)$semestre['numero'] ?></h1>
+        <h1 class="dashboard-title" style="color:#000 !important;">Semestre <?= (int)$semestre['numero'] ?></h1>
         <div>
             <?php if (empty($semestre['est_cloture'])): ?>
                 <a href="<?= BASE_URL ?>admin/semestres/<?= (int)$semestre['id'] ?>/activer" class="btn btn-success">
@@ -24,7 +24,6 @@ ob_start();
         </div>
         <div class="card-body">
             <p><strong>Année:</strong> <?= htmlspecialchars($annee['annee_debut']) ?> - <?= htmlspecialchars($annee['annee_fin']) ?></p>
-            <p><strong>Période:</strong> <?= date('d/m/Y', strtotime($semestre['date_debut'])) ?> au <?= date('d/m/Y', strtotime($semestre['date_fin'])) ?></p>
             <p><strong>Statut:</strong>
                 <?php if (!empty($semestre['est_cloture'])): ?>
                     <span class="badge badge-secondary">Clôturé</span>
@@ -38,8 +37,9 @@ ob_start();
     </div>
 
     <div class="mt-3">
-        <a href="<?= BASE_URL ?>admin/semestres" class="btn btn-outline-secondary"><i class="fas fa-list"></i> Tous les semestres</a>
-        <a href="<?= BASE_URL ?>admin/semestres/<?= (int)$semestre['id'] ?>/modifier" class="btn btn-warning"><i class="fas fa-edit"></i> Modifier</a>
+        <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-outline-primary">
+            <i class="fas fa-tachometer-alt"></i> Retour au dashboard
+        </a>
     </div>
 </div>
 

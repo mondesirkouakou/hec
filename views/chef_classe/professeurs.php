@@ -39,11 +39,6 @@ ob_start();
                                          FROM matieres m
                                          JOIN classe_matiere cm ON cm.matiere_id = m.id
                                          WHERE cm.classe_id = :classe_id
-                                           AND m.id NOT IN (
-                                               SELECT DISTINCT matiere_id
-                                               FROM affectation_professeur
-                                               WHERE classe_id = :classe_id
-                                           )
                                          ORDER BY m.intitule",
                                         ['classe_id' => $classe['id']]
                                     );
