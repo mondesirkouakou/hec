@@ -38,7 +38,7 @@ class EtudiantController {
         }
 
         $dn = trim(($this->etudiant['prenom'] ?? '') . ' ' . ($this->etudiant['nom'] ?? ''));
-        if (!empty($dn)) {
+        if (!empty($dn) && empty($_SESSION['display_name'])) {
             $_SESSION['display_name'] = $dn;
         }
     }
@@ -90,10 +90,13 @@ class EtudiantController {
         $selectedAnneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
         if ($selectedAnneeId) {
             $_SESSION['etu_annee_id'] = $selectedAnneeId;
+        } elseif ($anneeActive) {
+            // Par défaut, on se cale toujours sur l'année universitaire active,
+            // pour éviter de rester bloqué sur une ancienne année en session.
+            $selectedAnneeId = (int)$anneeActive['id'];
+            $_SESSION['etu_annee_id'] = $selectedAnneeId;
         } elseif (isset($_SESSION['etu_annee_id'])) {
             $selectedAnneeId = (int)$_SESSION['etu_annee_id'];
-        } elseif ($anneeActive) {
-            $selectedAnneeId = (int)$anneeActive['id'];
         }
 
         $semestresAnnee = [];
@@ -352,10 +355,71 @@ class EtudiantController {
         return null;
     }
 
+    private function computeMoyenneSemestreBulletin($semestreId) {
+        if (!$semestreId) {
+            return 0.0;
+        }
+
+        // Sur le bulletin, la moyenne de semestre est construite à partir des moyennes finales
+        // des matières (session 1 : 40% classe + 60% examen) pondérées par les crédits,
+        // puis divisée par 30.
+        $notesSemestre = $this->getNotes((int)$semestreId, 1);
+        if (empty($notesSemestre) || !is_array($notesSemestre)) {
+            return 0.0;
+        }
+
+        $sommeMoyennesPonderees = 0.0;
+        $denominateurSemestre = 30.0;
+
+        foreach ($notesSemestre as $n) {
+            $noteClasse = $this->computeNoteClasseMoyenne($n);
+            if ($noteClasse === null && isset($n['note']) && $n['note'] !== null && $n['note'] !== '') {
+                $noteClasse = (float)$n['note'];
+            }
+
+            $noteExamen = isset($n['note_examen']) && $n['note_examen'] !== null && $n['note_examen'] !== ''
+                ? (float)$n['note_examen']
+                : null;
+
+            $moyenneFinale = null;
+            if ($noteClasse !== null && $noteExamen !== null) {
+                $moyenneFinale = 0.4 * (float)$noteClasse + 0.6 * (float)$noteExamen;
+            } elseif ($noteClasse !== null) {
+                $moyenneFinale = (float)$noteClasse;
+            } elseif ($noteExamen !== null) {
+                $moyenneFinale = (float)$noteExamen;
+            }
+
+            if ($moyenneFinale === null) {
+                continue;
+            }
+
+            $credits = isset($n['credits']) && $n['credits'] !== null && $n['credits'] !== '' ? (float)$n['credits'] : 1.0;
+            $sommeMoyennesPonderees += $moyenneFinale * $credits;
+        }
+
+        if ($denominateurSemestre <= 0) {
+            return 0.0;
+        }
+
+        return $sommeMoyennesPonderees / $denominateurSemestre;
+    }
+
     public function notesData() {
         $db = Database::getInstance();
         $anneeActive = $this->anneeModel->getActiveYear();
         $anneeActiveId = $anneeActive ? (int)$anneeActive['id'] : null;
+
+        // Année sélectionnée : GET > session > année active
+        $selectedAnneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
+        if ($selectedAnneeId) {
+            $_SESSION['etu_annee_id'] = $selectedAnneeId;
+        } elseif (isset($_SESSION['etu_annee_id'])) {
+            $selectedAnneeId = (int)$_SESSION['etu_annee_id'];
+        } elseif ($anneeActiveId !== null) {
+            $selectedAnneeId = $anneeActiveId;
+            $_SESSION['etu_annee_id'] = $selectedAnneeId;
+        }
 
         $filters = [
             'semestre_id' => isset($_GET['semestre_id']) && $_GET['semestre_id'] !== '' ? (int)$_GET['semestre_id'] : null,
@@ -363,32 +427,69 @@ class EtudiantController {
         ];
 
         $notes = $this->getNotes($filters['semestre_id']);
+        // Pour le graphique "Évolution de vos moyennes", on veut uniquement les moyennes de la session 1
+        // (et inclure les anciennes lignes sans session, comme la logique de getNotes(session=1)).
+        $notesGraph = $this->getNotes($filters['semestre_id'], 1);
 
-        if ($anneeActiveId !== null) {
-            $notes = array_values(array_filter($notes, function ($n) use ($anneeActiveId) {
+        if ($selectedAnneeId !== null) {
+            $notes = array_values(array_filter($notes, function ($n) use ($selectedAnneeId) {
                 if (!isset($n['annee_universitaire_id'])) {
                     return true;
                 }
-                return (int)$n['annee_universitaire_id'] === $anneeActiveId;
+                return (int)$n['annee_universitaire_id'] === $selectedAnneeId;
+            }));
+
+            $notesGraph = array_values(array_filter($notesGraph, function ($n) use ($selectedAnneeId) {
+                if (!isset($n['annee_universitaire_id'])) {
+                    return true;
+                }
+                return (int)$n['annee_universitaire_id'] === $selectedAnneeId;
             }));
         }
 
         if ($filters['matiere_id']) {
             $notes = array_values(array_filter($notes, function($n) use ($filters) { return (int)$n['matiere_id'] === $filters['matiere_id']; }));
+            $notesGraph = array_values(array_filter($notesGraph, function($n) use ($filters) { return (int)$n['matiere_id'] === $filters['matiere_id']; }));
         }
 
-        if ($anneeActiveId !== null) {
+        if ($selectedAnneeId !== null) {
             $semestres = $db->fetchAll(
                 "SELECT id, CONCAT('Semestre ', numero) AS nom FROM semestres WHERE annee_universitaire_id = :annee_id ORDER BY numero",
-                ['annee_id' => $anneeActiveId]
+                ['annee_id' => $selectedAnneeId]
             );
         } else {
             $semestres = $db->fetchAll("SELECT id, CONCAT('Semestre ', numero) AS nom FROM semestres ORDER BY numero");
         }
 
         $matieres = $db->fetchAll("SELECT id, intitule AS nom FROM matieres ORDER BY intitule");
+
+        // Calculer la Moyenne Générale exactement comme demandé :
+        // Moyenne Générale = (MOYENNE SEMESTRE 1 + MOYENNE SEMESTRE 2) / 2
+        // en utilisant le même calcul que sur le bulletin.
+        $moyenneS1 = 0.0;
+        $moyenneS2 = 0.0;
+        if ($selectedAnneeId !== null) {
+            $semestresIds = $db->fetchAll(
+                "SELECT id, numero
+                 FROM semestres
+                 WHERE annee_universitaire_id = :annee_id
+                   AND numero IN (1, 2)
+                 ORDER BY numero",
+                ['annee_id' => $selectedAnneeId]
+            );
+
+            foreach ($semestresIds as $srow) {
+                $num = isset($srow['numero']) ? (int)$srow['numero'] : null;
+                $sid = isset($srow['id']) ? (int)$srow['id'] : null;
+                if ($num === 1 && $sid) {
+                    $moyenneS1 = $this->computeMoyenneSemestreBulletin($sid);
+                } elseif ($num === 2 && $sid) {
+                    $moyenneS2 = $this->computeMoyenneSemestreBulletin($sid);
+                }
+            }
+        }
         $stats = [
-            'moyenne_generale' => count($notes) ? array_sum(array_map(function($n){return (float)$n['note'];}, $notes))/count($notes) : 0,
+            'moyenne_generale' => ($moyenneS1 + $moyenneS2) / 2,
             'evolution_moyenne' => null,
             'meilleure_note' => ['moyenne' => 0, 'matiere_nom' => null],
             'rang' => null,
@@ -431,7 +532,7 @@ class EtudiantController {
         // Préparer les données du graphique : une entrée par matière
         // (moyenne de classe et moyenne d'examen sur l'année en cours)
         $parMatiereGraph = [];
-        foreach ($notes as $n) {
+        foreach ($notesGraph as $n) {
             $mid = isset($n['matiere_id']) ? (int)$n['matiere_id'] : 0;
             if ($mid === 0) {
                 continue;
@@ -733,6 +834,7 @@ class EtudiantController {
                 FROM classes c
                 JOIN inscriptions i ON c.id = i.classe_id
                 WHERE i.etudiant_id = :etudiant_id" . $anneeFilter . "
+                ORDER BY i.annee_universitaire_id DESC, i.date_inscription DESC, i.id DESC
                 LIMIT 1";
         
         $db = Database::getInstance();

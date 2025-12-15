@@ -6,8 +6,8 @@ ob_start();
 <div class="container-fluid admin-dashboard">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="dashboard-title">Gestion des semestres <?= !empty($anneeLibelle) ? '(' . htmlspecialchars($anneeLibelle) . ')' : '' ?></h1>
-        <a href="<?= BASE_URL ?>admin/semestres/nouveau<?= !empty($anneeLibelle) ? '?annee=' . htmlspecialchars($_GET['annee']) : '' ?>" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nouveau semestre
+        <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-outline-primary">
+            <i class="fas fa-tachometer-alt"></i> Retour au dashboard
         </a>
     </div>
 

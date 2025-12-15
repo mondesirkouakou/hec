@@ -55,14 +55,18 @@ ob_start();
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="annee_universitaire_id" class="form-label">Année universitaire <span class="text-danger">*</span></label>
-                        <select class="form-control" id="annee_universitaire_id" name="annee_universitaire_id" required>
-                            <option value="">Choisir...</option>
-                            <?php foreach ($annees as $annee): ?>
-                                <option value="<?= (int)$annee['id'] ?>" <?= (($_SESSION['old']['annee_universitaire_id'] ?? '') == $annee['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($annee['annee_debut']) ?> - <?= htmlspecialchars($annee['annee_fin']) ?>
+                        <?php if (!empty($activeYear) && !empty($activeYear['id'])): ?>
+                            <input type="hidden" name="annee_universitaire_id" value="<?= (int)$activeYear['id'] ?>">
+                            <select class="form-control" id="annee_universitaire_id" disabled>
+                                <option value="<?= (int)$activeYear['id'] ?>" selected>
+                                    <?= htmlspecialchars($activeYear['annee_debut']) ?> - <?= htmlspecialchars($activeYear['annee_fin']) ?>
                                 </option>
-                            <?php endforeach; ?>
-                        </select>
+                            </select>
+                        <?php else: ?>
+                            <div class="alert alert-warning mb-0">
+                                Aucune année universitaire active n'est définie. Veuillez en activer une avant de créer une classe.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -70,7 +74,7 @@ ob_start();
                     <button type="reset" class="btn btn-secondary me-md-2">
                         <i class="fas fa-undo"></i> Réinitialiser
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" <?= (empty($activeYear) || empty($activeYear['id'])) ? 'disabled' : '' ?>>
                         <i class="fas fa-save"></i> Enregistrer
                     </button>
                 </div>

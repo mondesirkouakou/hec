@@ -45,7 +45,8 @@ class ClasseController {
         // Récupérer la liste des années universitaires pour le formulaire
         $anneeModel = new AnneeUniversitaire($this->db);
         $annees = $anneeModel->getAll();
-        
+        $activeYear = $anneeModel->getActiveYear();
+
         include __DIR__ . '/../views/admin/classes/create.php';
     }
     
@@ -54,25 +55,43 @@ class ClasseController {
      */
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $anneeModel = new AnneeUniversitaire($this->db);
+            $activeYear = $anneeModel->getActiveYear();
+            if (empty($activeYear) || empty($activeYear['id'])) {
+                $_SESSION['errors'] = ["Aucune année universitaire active n'est définie. Veuillez en activer une avant de créer une classe."];
+                $_SESSION['old'] = $_POST;
+                header('Location: ' . BASE_URL . 'admin/classes/nouvelle');
+                exit();
+            }
+
             $data = [
                 'code' => $_POST['code'] ?? '',
                 'intitule' => $_POST['intitule'] ?? '',
                 'niveau' => $_POST['niveau'] ?? '',
-                'annee_universitaire_id' => $_POST['annee_universitaire_id'] ?? null
+                'annee_universitaire_id' => (int)$activeYear['id']
             ];
             
             // Validation des données
             $errors = $this->validateClassData($data);
             
             if (empty($errors)) {
-                $success = $this->classeModel->create($data);
-                
-                if ($success) {
-                    $_SESSION['success'] = "La classe a été créée avec succès.";
-                    header('Location: ' . BASE_URL . 'admin/classes');
-                    exit();
-                } else {
-                    $errors[] = "Une erreur est survenue lors de la création de la classe.";
+                try {
+                    $success = $this->classeModel->create($data);
+                    
+                    if ($success) {
+                        $_SESSION['success'] = "La classe a été créée avec succès.";
+                        header('Location: ' . BASE_URL . 'admin/classes');
+                        exit();
+                    } else {
+                        $errors[] = "Une erreur est survenue lors de la création de la classe.";
+                    }
+                } catch (PDOException $e) {
+                    $msg = $e->getMessage();
+                    if (strpos($msg, 'SQLSTATE[23000]') !== false || strpos($msg, '1062') !== false) {
+                        $errors[] = "Ce code de classe est déjà utilisé.";
+                    } else {
+                        $errors[] = "Une erreur est survenue lors de la création de la classe.";
+                    }
                 }
             }
             
@@ -117,9 +136,9 @@ class ClasseController {
             exit();
         }
         
-        // Récupérer la liste des années universitaires pour le formulaire
+        // Récupérer l'année universitaire active (pour verrouiller le champ dans le formulaire)
         $anneeModel = new AnneeUniversitaire($this->db);
-        $annees = $anneeModel->getAll();
+        $activeYear = $anneeModel->getActiveYear();
 
         // Récupérer les étudiants de la classe
         $etudiants = $this->classeModel->getEtudiants($id);
@@ -139,33 +158,51 @@ class ClasseController {
      */
     public function update($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $anneeModel = new AnneeUniversitaire($this->db);
+            $activeYear = $anneeModel->getActiveYear();
+            if (empty($activeYear) || empty($activeYear['id'])) {
+                $_SESSION['errors'] = ["Aucune année universitaire active n'est définie. Veuillez en activer une avant de modifier une classe."];
+                $_SESSION['old'] = $_POST;
+                header('Location: ' . BASE_URL . 'admin/classes/modifier/' . (int)$id);
+                exit();
+            }
+
             $data = [
                 'id' => $id,
                 'code' => $_POST['code'] ?? '',
                 'intitule' => $_POST['intitule'] ?? '',
                 'niveau' => $_POST['niveau'] ?? '',
-                'annee_universitaire_id' => $_POST['annee_universitaire_id'] ?? null
+                'annee_universitaire_id' => (int)$activeYear['id']
             ];
             
             // Validation des données
             $errors = $this->validateClassData($data);
             
             if (empty($errors)) {
-                $success = $this->classeModel->update($data);
-                
-                if ($success) {
-                    $_SESSION['success'] = "La classe a été mise à jour avec succès.";
-                    header('Location: ' . BASE_URL . 'admin/classes/' . $id);
-                    exit();
-                } else {
-                    $errors[] = "Une erreur est survenue lors de la mise à jour de la classe.";
+                try {
+                    $success = $this->classeModel->update($data);
+                    
+                    if ($success) {
+                        $_SESSION['success'] = "La classe a été mise à jour avec succès.";
+                        header('Location: ' . BASE_URL . 'admin/classes/' . $id);
+                        exit();
+                    } else {
+                        $errors[] = "Une erreur est survenue lors de la mise à jour de la classe.";
+                    }
+                } catch (PDOException $e) {
+                    $msg = $e->getMessage();
+                    if (strpos($msg, 'SQLSTATE[23000]') !== false || strpos($msg, '1062') !== false) {
+                        $errors[] = "Ce code de classe est déjà utilisé.";
+                    } else {
+                        $errors[] = "Une erreur est survenue lors de la mise à jour de la classe.";
+                    }
                 }
             }
             
             // Si on arrive ici, il y a eu une erreur
             $_SESSION['errors'] = $errors;
             $_SESSION['old'] = $data;
-            header('Location: ' . BASE_URL . 'admin/classes/' . $id . '/edit');
+            header('Location: ' . BASE_URL . 'admin/classes/modifier/' . (int)$id);
             exit();
         }
     }
@@ -222,6 +259,13 @@ class ClasseController {
         
         if (empty($data['code'])) {
             $errors[] = "Le code de la classe est obligatoire.";
+        }
+
+        if (!empty($data['code'])) {
+            $excludeId = isset($data['id']) ? (int)$data['id'] : null;
+            if ($this->classeModel->codeExists($data['code'], $excludeId)) {
+                $errors[] = "Ce code de classe est déjà utilisé.";
+            }
         }
         
         if (empty($data['intitule'])) {

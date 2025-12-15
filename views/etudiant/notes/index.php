@@ -33,10 +33,12 @@ ob_start();
                     <div class="summary-content">
                         <h3>Moyenne Générale</h3>
                         <div class="summary-value"><?= number_format($stats['moyenne_generale'] ?? 0, 2, ',', ' ') ?>/20</div>
-                        <div class="summary-comparison <?= ($stats['evolution_moyenne'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
-                            <i class="fas fa-arrow-<?= ($stats['evolution_moyenne'] ?? 0) >= 0 ? 'up' : 'down' ?>"></i>
-                            <?= abs($stats['evolution_moyenne'] ?? 0) ?>% vs semestre dernier
-                        </div>
+                        <?php if (!empty($stats['evolution_moyenne'])): ?>
+                            <div class="summary-comparison <?= ($stats['evolution_moyenne'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
+                                <i class="fas fa-arrow-<?= ($stats['evolution_moyenne'] ?? 0) >= 0 ? 'up' : 'down' ?>"></i>
+                                <?= abs($stats['evolution_moyenne'] ?? 0) ?>% vs semestre dernier
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 

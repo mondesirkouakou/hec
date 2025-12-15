@@ -20,7 +20,7 @@
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <div class="user-dropdown">
                             <button type="button" class="d-flex align-items-center p-0 border-0 bg-transparent text-decoration-none" id="userDropdown" style="color: inherit; cursor: pointer;">
-                                <span class="welcome-text heartbeat me-2 d-none d-md-inline">Bienvenue, <?= htmlspecialchars($_SESSION['display_name'] ?? $_SESSION['username']) ?></span>
+                                <span class="welcome-text me-2 d-none d-md-inline">Bienvenue, <?= htmlspecialchars($_SESSION['display_name'] ?? $_SESSION['username']) ?></span>
                                 <div class="user-avatar">
                                     <i class="fas fa-user-circle fa-2x"></i>
                                 </div>
@@ -34,9 +34,9 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center" href="<?= BASE_URL ?>change-password">
-                                        <i class="fas fa-key me-2 w-20"></i>
-                                        Changer mot de passe
+                                    <a class="dropdown-item d-flex align-items-center" href="<?= BASE_URL ?>profile">
+                                        <i class="fas fa-user me-2 w-20"></i>
+                                        Profil
                                     </a>
                                 </li>
                                 <li>

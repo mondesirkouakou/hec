@@ -584,7 +584,7 @@ body.dark-mode .user-dropdown .dropdown-divider {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--primary-color);
-  animation: welcome-pulse 3s ease-in-out infinite;
+  animation: none;
 }
 
 @keyframes welcome-pulse {

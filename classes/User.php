@@ -3,6 +3,7 @@
  * Classe de base pour la gestion des utilisateurs
  */
 class User {
+
     // Propriétés correspondant aux champs de la table users
     protected $id;
     protected $username;
@@ -17,6 +18,8 @@ class User {
 
     // Objet de base de données
     protected $db;
+
+    private $columnCache = [];
 
     /**
      * Constructeur
@@ -122,7 +125,7 @@ class User {
 
     /**
      * Authentifie un utilisateur
-     * @param string $username Le nom d'utilisateur
+     * @param string $identifier Le nom d'utilisateur ou l'email
      * @param string $password Le mot de passe en clair
      * @return bool True si l'authentification réussit, false sinon
      */
@@ -147,20 +150,29 @@ class User {
             $roleMap = [1 => 'admin', 2 => 'chef-classe', 3 => 'professeur', 4 => 'etudiant'];
             $_SESSION['user_role'] = $roleMap[$user['role_id']] ?? 'guest';
             $displayName = $user['username'];
-            if ($user['role_id'] == 4 || $user['role_id'] == 2) {
-                $row = $this->db->fetch("SELECT nom, prenom FROM etudiants WHERE user_id = :uid", ['uid' => $user['id']]);
-                if ($row) {
-                    $name = trim(($row['prenom'] ?? '') . ' ' . ($row['nom'] ?? ''));
-                    if (!empty($name)) {
-                        $displayName = $name;
+            $hasCustomDisplayName = isset($user['display_name']) && trim((string)$user['display_name']) !== '';
+            if ($hasCustomDisplayName) {
+                $displayName = trim((string)$user['display_name']);
+            }
+
+            // Si l'utilisateur n'a pas défini de nom affiché personnalisé,
+            // on essaie de construire un nom à partir de son profil.
+            if (!$hasCustomDisplayName) {
+                if ($user['role_id'] == 4 || $user['role_id'] == 2) {
+                    $row = $this->db->fetch("SELECT nom, prenom FROM etudiants WHERE user_id = :uid", ['uid' => $user['id']]);
+                    if ($row) {
+                        $name = trim(($row['prenom'] ?? '') . ' ' . ($row['nom'] ?? ''));
+                        if (!empty($name)) {
+                            $displayName = $name;
+                        }
                     }
-                }
-            } elseif ($user['role_id'] == 3) {
-                $row = $this->db->fetch("SELECT nom, prenom FROM professeurs WHERE user_id = :uid", ['uid' => $user['id']]);
-                if ($row) {
-                    $name = trim(($row['prenom'] ?? '') . ' ' . ($row['nom'] ?? ''));
-                    if (!empty($name)) {
-                        $displayName = $name;
+                } elseif ($user['role_id'] == 3) {
+                    $row = $this->db->fetch("SELECT nom, prenom FROM professeurs WHERE user_id = :uid", ['uid' => $user['id']]);
+                    if ($row) {
+                        $name = trim(($row['prenom'] ?? '') . ' ' . ($row['nom'] ?? ''));
+                        if (!empty($name)) {
+                            $displayName = $name;
+                        }
                     }
                 }
             }
@@ -170,6 +182,49 @@ class User {
         }
         
         return false;
+    }
+
+    private function hasColumn($table, $column) {
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $this->columnCache)) {
+            return (bool)$this->columnCache[$key];
+        }
+
+        try {
+            $row = $this->db->fetch(
+                "SELECT COUNT(*) AS cnt
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = :t
+                   AND COLUMN_NAME = :c",
+                ['t' => $table, 'c' => $column]
+            );
+            $exists = !empty($row) && (int)($row['cnt'] ?? 0) > 0;
+            $this->columnCache[$key] = $exists;
+            return $exists;
+        } catch (Exception $e) {
+            $this->columnCache[$key] = false;
+            return false;
+        }
+    }
+
+    public function updateDisplayName($userId, $displayName) {
+        $displayName = trim((string)$displayName);
+        if ($displayName === '') {
+            return false;
+        }
+
+        // Si la colonne n'existe pas (ancienne base), on ne casse pas :
+        // la valeur restera en session.
+        if (!$this->hasColumn('users', 'display_name')) {
+            return true;
+        }
+
+        $sql = "UPDATE users SET display_name = :display_name WHERE id = :id";
+        return $this->db->execute($sql, [
+            'display_name' => $displayName,
+            'id' => (int)$userId
+        ]) >= 0;
     }
 
     /**

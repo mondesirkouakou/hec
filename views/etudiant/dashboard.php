@@ -6,7 +6,22 @@ ob_start();
 <div class="dashboard-header">
     <div class="welcome-message">
         <p class="text-muted">
-            <i class="fas fa-calendar-alt"></i> <?= date('l d F Y') ?>
+            <?php
+            $dateFr = null;
+            if (class_exists('IntlDateFormatter')) {
+                $fmt = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE, date_default_timezone_get(), IntlDateFormatter::GREGORIAN, 'EEEE d MMMM y');
+                $dateFr = $fmt->format(new DateTime());
+            }
+            if (!$dateFr) {
+                $oldLocale = setlocale(LC_TIME, '0');
+                setlocale(LC_TIME, 'fr_FR.UTF-8', 'fr_FR', 'French_France.1252');
+                $dateFr = utf8_encode(strftime('%A %e %B %Y'));
+                if ($oldLocale) {
+                    setlocale(LC_TIME, $oldLocale);
+                }
+            }
+            ?>
+            <i class="fas fa-calendar-alt"></i> <?= htmlspecialchars($dateFr) ?>
             <span class="mx-2">•</span>
             <i class="fas fa-user-graduate"></i> <?= htmlspecialchars($classe['intitule'] ?? 'Non affecté') ?>
         </p>

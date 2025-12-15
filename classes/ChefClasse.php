@@ -297,27 +297,30 @@ class ChefClasse extends User {
                 }
             }
             
-            // Vérifier que la matière n'est pas déjà attribuée
-            $dejaAffecte = $this->db->fetchColumn(
-                "SELECT COUNT(*) FROM {$this->table_affectation} 
-                 WHERE classe_id = :classe_id AND matiere_id = :matiere_id",
-                [
-                    'classe_id' => $this->classe_id,
-                    'matiere_id' => $professeurData['matiere_id']
-                ]
-            );
-            
-            if ($dejaAffecte) {
-                throw new Exception("Cette matière est déjà attribuée à un professeur pour cette classe");
-            }
-            
             // Récupérer l'année universitaire active
             $anneeActive = $this->db->fetch(
                 "SELECT id FROM annees_universitaires WHERE est_active = 1 LIMIT 1"
             );
-            
+
             if (!$anneeActive) {
                 throw new Exception("Aucune année universitaire active trouvée");
+            }
+
+            // Vérifier que la matière n'est pas déjà attribuée (sur l'année universitaire active)
+            $dejaAffecte = $this->db->fetchColumn(
+                "SELECT COUNT(*) FROM {$this->table_affectation}
+                 WHERE classe_id = :classe_id
+                   AND matiere_id = :matiere_id
+                   AND annee_universitaire_id = :annee_id",
+                [
+                    'classe_id' => $this->classe_id,
+                    'matiere_id' => $professeurData['matiere_id'],
+                    'annee_id' => $anneeActive['id']
+                ]
+            );
+
+            if ($dejaAffecte) {
+                throw new Exception("Cette matière est déjà attribuée à un professeur pour cette classe");
             }
             
             // Ajouter l'affectation
@@ -340,6 +343,9 @@ class ChefClasse extends User {
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log("Erreur ajout professeur: " . $e->getMessage());
+            if (isset($_SESSION)) {
+                $_SESSION['error'] = $e->getMessage();
+            }
             return false;
         }
     }
@@ -354,20 +360,6 @@ class ChefClasse extends User {
         try {
             // Interdire les modifications si les listes ont déjà été soumises / validées
             $this->ensureListesModifiables();
-            // Vérifier que la matière n'est pas déjà attribuée à un autre professeur
-            $dejaAffecte = $this->db->fetchColumn(
-                "SELECT COUNT(*) FROM {$this->table_affectation} 
-                 WHERE classe_id = :classe_id AND matiere_id = :matiere_id",
-                [
-                    'classe_id' => $this->classe_id,
-                    'matiere_id' => $matiereId
-                ]
-            );
-            
-            if ($dejaAffecte) {
-                throw new Exception("Cette matière est déjà attribuée à un professeur pour cette classe");
-            }
-            
             // Récupérer l'année universitaire active
             $anneeActive = $this->db->fetch(
                 "SELECT id FROM annees_universitaires WHERE est_active = 1 LIMIT 1"
@@ -375,6 +367,23 @@ class ChefClasse extends User {
             
             if (!$anneeActive) {
                 throw new Exception("Aucune année universitaire active trouvée");
+            }
+
+            // Vérifier que la matière n'est pas déjà attribuée à un autre professeur (sur l'année active)
+            $dejaAffecte = $this->db->fetchColumn(
+                "SELECT COUNT(*) FROM {$this->table_affectation}
+                 WHERE classe_id = :classe_id
+                   AND matiere_id = :matiere_id
+                   AND annee_universitaire_id = :annee_id",
+                [
+                    'classe_id' => $this->classe_id,
+                    'matiere_id' => $matiereId,
+                    'annee_id' => $anneeActive['id']
+                ]
+            );
+
+            if ($dejaAffecte) {
+                throw new Exception("Cette matière est déjà attribuée à un professeur pour cette classe");
             }
             
             // Ajouter l'affectation
@@ -395,6 +404,9 @@ class ChefClasse extends User {
             
         } catch (Exception $e) {
             error_log("Erreur ajout professeur: " . $e->getMessage());
+            if (isset($_SESSION)) {
+                $_SESSION['error'] = $e->getMessage();
+            }
             return false;
         }
     }
@@ -512,7 +524,7 @@ class ChefClasse extends User {
             
         } catch (Exception $e) {
             error_log("Erreur soumission des listes: " . $e->getMessage());
-            if (session_status() === PHP_SESSION_ACTIVE) {
+            if (isset($_SESSION)) {
                 $_SESSION['error'] = $e->getMessage();
             }
             return false;

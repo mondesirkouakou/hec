@@ -144,7 +144,9 @@ class ChefClasseController {
             if ($success) {
                 $_SESSION['message'] = 'Professeur ajouté avec succès';
             } else {
-                $_SESSION['error'] = 'Erreur lors de l\'ajout du professeur';
+                if (empty($_SESSION['error'])) {
+                    $_SESSION['error'] = 'Erreur lors de l\'ajout du professeur';
+                }
             }
 
             header('Location: ' . BASE_URL . 'chef-classe/dashboard');

@@ -408,17 +408,41 @@ class Admin extends User {
             return false;
         }
         try {
+            $this->db->beginTransaction();
+
             foreach ($userIds as $userId) {
+                $userId = (int)$userId;
+
                 $this->db->execute(
                     "UPDATE users SET is_active = :is_active WHERE id = :id",
                     [
                         'is_active' => $isActive ? 1 : 0,
-                        'id' => (int)$userId
+                        'id' => $userId
                     ]
                 );
+
+                // Si on réactive volontairement un chef de classe, on doit aussi
+                // remettre sa classe en état modifiable (sinon ensureListesModifiables bloque).
+                if ($isActive) {
+                    // Déverrouiller toutes les classes liées à ce chef (sécurité)
+                    $this->db->execute(
+                        "UPDATE {$this->table_classes}
+                         SET statut_listes = ''
+                         WHERE id IN (
+                             SELECT cc.classe_id
+                             FROM {$this->table_chef_classe} cc
+                             JOIN {$this->table_etudiants} e ON cc.etudiant_id = e.id
+                             WHERE e.user_id = :user_id
+                         )",
+                        ['user_id' => $userId]
+                    );
+                }
             }
+
+            $this->db->commit();
             return true;
         } catch (Exception $e) {
+            $this->db->rollBack();
             error_log("Erreur changement de statut des chefs de classe: " . $e->getMessage());
             return false;
         }

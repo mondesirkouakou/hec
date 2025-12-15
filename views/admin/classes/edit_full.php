@@ -30,7 +30,7 @@ ob_start();
             <h6 class="m-0 font-weight-bold text-primary">Informations générales de la classe</h6>
         </div>
         <div class="card-body">
-            <form action="<?= BASE_URL ?>admin/classes/update/<?= $classe['id'] ?>" method="POST">
+            <form action="<?= BASE_URL ?>admin/classes/modifier/<?= (int)$classe['id'] ?>" method="POST">
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label for="code" class="form-label">Code</label>
@@ -53,19 +53,23 @@ ob_start();
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="annee_universitaire_id" class="form-label">Année universitaire <span class="text-danger">*</span></label>
-                        <select class="form-control" id="annee_universitaire_id" name="annee_universitaire_id" required>
-                            <option value="">Choisir...</option>
-                            <?php foreach ($annees as $annee): ?>
-                                <option value="<?= (int)$annee['id'] ?>" <?= (($classe['annee_universitaire_id'] ?? '') == $annee['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($annee['annee_debut']) ?> - <?= htmlspecialchars($annee['annee_fin']) ?>
+                        <?php if (!empty($activeYear) && !empty($activeYear['id'])): ?>
+                            <input type="hidden" name="annee_universitaire_id" value="<?= (int)$activeYear['id'] ?>">
+                            <select class="form-control" id="annee_universitaire_id" disabled>
+                                <option value="<?= (int)$activeYear['id'] ?>" selected>
+                                    <?= htmlspecialchars($activeYear['annee_debut']) ?> - <?= htmlspecialchars($activeYear['annee_fin']) ?>
                                 </option>
-                            <?php endforeach; ?>
-                        </select>
+                            </select>
+                        <?php else: ?>
+                            <div class="alert alert-warning mb-0">
+                                Aucune année universitaire active n'est définie. Veuillez en activer une avant de modifier une classe.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" <?= (empty($activeYear) || empty($activeYear['id'])) ? 'disabled' : '' ?>>
                         <i class="fas fa-save"></i> Enregistrer les modifications
                     </button>
                 </div>

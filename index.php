@@ -83,12 +83,17 @@ switch ($request_uri) {
         break;
 
     case '/change-password':
-        require_once __DIR__ . '/controllers/AuthController.php';
-        $authController = new AuthController();
+        header('Location: ' . BASE_URL . 'profile');
+        exit();
+        break;
+
+    case '/profile':
+        require_once __DIR__ . '/controllers/ProfileController.php';
+        $profileController = new ProfileController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $authController->changePassword();
+            $profileController->update();
         } else {
-            $authController->changePassword(); // Affiche le formulaire
+            $profileController->index();
         }
         break;
         
