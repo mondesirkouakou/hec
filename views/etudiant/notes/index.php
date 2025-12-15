@@ -15,7 +15,7 @@ ob_start();
 
 <div class="card">
     <div class="card-header">
-        Statistiques et diagramme de mes moyennes (année en cours)
+        Statistiques et diagramme de mes moyennes 
     </div>
     
     <div class="card-body">

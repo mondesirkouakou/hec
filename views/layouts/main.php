@@ -57,7 +57,7 @@
         </div>
     </header>
 
-    <main class="container animated-container">
+    <main class="<?= !empty($isFullWidth) ? 'animated-container' : 'container animated-container' ?>">
         <div class="particles-container">
             <div class="particle"></div>
             <div class="particle"></div>
