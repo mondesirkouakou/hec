@@ -22,6 +22,48 @@ if ($adminBulletinMode) {
     $backLabel = 'Retour au dashboard';
 }
 ?>
+<style>
+@media screen {
+    .page {
+        width: min(210mm, 100%) !important;
+        margin: 0 auto !important;
+    }
+
+    @media (max-width: 768px) {
+        .page {
+            width: 100% !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 12px !important;
+            box-shadow: none !important;
+        }
+
+        .page .header h2 {
+            font-size: 16px !important;
+        }
+
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-scroll table {
+            min-width: 900px;
+        }
+    }
+}
+
+@media print {
+    .page {
+        width: 210mm !important;
+        min-height: 297mm !important;
+        margin: 0 auto !important;
+        padding: 12mm !important;
+        box-shadow: none !important;
+    }
+}
+</style>
 <div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <a href="<?= htmlspecialchars($backUrl) ?>" class="btn btn-sm btn-secondary">
         <i class="fas fa-arrow-left"></i> <?= htmlspecialchars($backLabel) ?>
@@ -161,6 +203,7 @@ if ($adminBulletinMode) {
     <div class="sub-header" style="text-align:center;font-weight:bold;margin-bottom:10px;">SEMESTRE <?= (int)$semestreNumero ?></div>
 
     <!-- Tableau des notes dynamique basé sur $notes -->
+    <div class="table-scroll">
     <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:13px;">
         <thead>
             <tr>
@@ -298,7 +341,8 @@ if ($adminBulletinMode) {
                 ?>
             <?php endif; ?>
         </tbody>
-    </table>
+</table>
+</div>
 
     <div class="footer-summary" style="margin-top:10px;border:1px solid #000;padding:8px;display:flex;justify-content:space-between;font-weight:bold;text-transform:uppercase;">
         <?php

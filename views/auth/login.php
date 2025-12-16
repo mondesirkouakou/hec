@@ -278,6 +278,7 @@ ob_start();
         </div>
 
         <form action="<?= BASE_URL ?>login" method="POST" id="loginForm">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
             <!-- Username Input -->
             <div class="input-group-float">
                 <input type="text" id="username" name="username" class="custom-input" placeholder=" " required autocomplete="off">

@@ -32,6 +32,11 @@ class AuthController {
         // Afficher le formulaire de connexion
         $pageTitle = 'Connexion';
         $error = $_SESSION['error'] ?? null;
+
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        $csrfToken = $_SESSION['csrf_token'];
         
         // Inclure la vue de connexion
         include __DIR__ . '/../views/auth/login.php';
@@ -42,6 +47,14 @@ class AuthController {
      */
     public function login() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $postedToken = $_POST['csrf_token'] ?? '';
+            $sessionToken = $_SESSION['csrf_token'] ?? '';
+            if (empty($postedToken) || empty($sessionToken) || !hash_equals($sessionToken, $postedToken)) {
+                $_SESSION['error'] = "Session expirée. Veuillez réessayer.";
+                $this->showLoginForm();
+                return;
+            }
+
             $username = isset($_POST['username']) ? trim($_POST['username']) : '';
             $password = isset($_POST['password']) ? trim($_POST['password']) : '';
             
@@ -59,6 +72,7 @@ class AuthController {
             }
 
             if ($this->user->login($username, $password)) {
+                session_regenerate_id(true);
                 if (!empty($_SESSION['force_password_change'])) {
                     header('Location: ' . BASE_URL . 'change-password');
                     exit();

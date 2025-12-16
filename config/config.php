@@ -13,14 +13,27 @@ define('MAIL_PORT', 587);
 define('MAIL_ENCRYPTION', 'tls');
 
 // Autres paramètres globaux
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'];
+$forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null;
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($forwardedProto === 'https');
+$scheme = $isHttps ? 'https' : 'http';
+$host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
 $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
 define('BASE_URL', $scheme . '://' . $host . ($basePath ? $basePath . '/' : '/'));
 define('APP_NAME', 'HEC Abidjan');
 
 // Démarrer la session (si ce n'est pas déjà fait)
 if (session_status() == PHP_SESSION_NONE) {
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.use_only_cookies', '1');
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => $basePath ? ($basePath . '/') : '/',
+        'domain' => '',
+        'secure' => $isHttps,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 ?>

@@ -1,7 +1,4 @@
 <?php
-// Démarrer la session
-session_start();
-
 // Définir les constantes de base
 define('BASE_PATH', __DIR__);
 define('APP_PATH', BASE_PATH . '/app');
@@ -16,11 +13,6 @@ error_reporting(E_ALL);
 
 // Définir le fuseau horaire
 date_default_timezone_set('Africa/Abidjan');
-
-// Démarrer la session
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 // Obtenir l'URL demandée
 $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
