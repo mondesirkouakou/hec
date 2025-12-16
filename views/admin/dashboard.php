@@ -180,7 +180,13 @@ ob_start();
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card animated-card warning-card rotate-3d magnetic-effect">
                 <div class="card-body">
-                    <a href="<?= BASE_URL ?>admin/classes?statut_listes=en_attente" class="text-reset text-decoration-none d-block">
+                    <?php
+                    $isYearClosed = !empty($isSelectedAnneeCloturee);
+                    $pendingHref = BASE_URL . 'admin/classes?statut_listes=en_attente';
+                    ?>
+                    <a href="<?= $isYearClosed ? '#' : $pendingHref ?>"
+                       class="text-reset text-decoration-none d-block<?= $isYearClosed ? ' disabled' : '' ?>"
+                       <?= $isYearClosed ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>>
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
@@ -209,31 +215,31 @@ ob_start();
                 <div class="card-body card-body-animated">
                     <div class="row">
                         <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-                            <a href="<?= BASE_URL ?>admin/classes/nouvelle" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
+                            <a href="<?= $isYearClosed ? '#' : (BASE_URL . 'admin/classes/nouvelle') ?>" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect<?= $isYearClosed ? ' disabled' : '' ?>" <?= $isYearClosed ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>>
                                 <i class="fas fa-plus-circle text-success mr-2"></i>
                                 Ajouter une classe
                             </a>
                         </div>
                         <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-                            <a href="<?= BASE_URL ?>admin/classes" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
+                            <a href="<?= $isYearClosed ? '#' : (BASE_URL . 'admin/classes') ?>" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect<?= $isYearClosed ? ' disabled' : '' ?>" <?= $isYearClosed ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>>
                                 <i class="fas fa-user-plus text-info mr-2"></i>
                                 Gérer les classes
                             </a>
                         </div>
                         <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-                            <a href="<?= BASE_URL ?>admin/chefs-classe" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect">
+                            <a href="<?= $isYearClosed ? '#' : (BASE_URL . 'admin/chefs-classe') ?>" class="btn btn-light btn-block text-left p-3 border ripple-effect magnetic-effect<?= $isYearClosed ? ' disabled' : '' ?>" <?= $isYearClosed ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>>
                                 <i class="fas fa-user-tie text-warning mr-2"></i>
                                 Gérer chef de classe
                             </a>
                         </div>
                         <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-                            <a href="<?= BASE_URL ?>admin/notes/saisie" class="btn btn-light btn-block text-left p-3 border">
+                            <a href="<?= $isYearClosed ? '#' : (BASE_URL . 'admin/notes/saisie') ?>" class="btn btn-light btn-block text-left p-3 border<?= $isYearClosed ? ' disabled' : '' ?>" <?= $isYearClosed ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>>
                                 <i class="fas fa-pen text-primary mr-2"></i>
                                 Saisir des notes
                             </a>
                         </div>
                         <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-                            <a href="<?= BASE_URL ?>admin/semestres" class="btn btn-light btn-block text-left p-3 border">
+                            <a href="<?= $isYearClosed ? '#' : (BASE_URL . 'admin/semestres') ?>" class="btn btn-light btn-block text-left p-3 border<?= $isYearClosed ? ' disabled' : '' ?>" <?= $isYearClosed ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>>
                                 <i class="fas fa-lock-open text-warning mr-2"></i>
                                 Gestion des semestres
                             </a>
@@ -287,7 +293,14 @@ ob_start();
                                 <?php endif; ?>
                             </div>
                             <div>
-                                <a href="<?= BASE_URL ?>admin/etudiants/<?= (int)($etudiantRecherche['id'] ?? 0) ?>/bulletin" class="btn btn-sm btn-outline-primary">Voir le bulletin</a>
+                                <?php
+                                $bulletinHref = BASE_URL . 'admin/etudiants/' . (int)($etudiantRecherche['id'] ?? 0) . '/bulletin';
+                                $bulletinParams = [];
+                                if (!empty($selectedAnneeId)) { $bulletinParams[] = 'annee_id=' . (int)$selectedAnneeId; }
+                                if (!empty($selectedSemestreId)) { $bulletinParams[] = 'semestre_id=' . (int)$selectedSemestreId; }
+                                if (!empty($bulletinParams)) { $bulletinHref .= '?' . implode('&', $bulletinParams); }
+                                ?>
+                                <a href="<?= htmlspecialchars($bulletinHref) ?>" class="btn btn-sm btn-outline-primary">Voir le bulletin</a>
                             </div>
                         </div>
                     <?php else: ?>

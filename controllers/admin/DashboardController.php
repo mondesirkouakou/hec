@@ -178,6 +178,14 @@ class DashboardController {
 
         error_log("[Dashboard] Final tousSemestresClotures=" . ($tousSemestresClotures ? '1' : '0'));
 
+        $isSelectedAnneeCloturee = false;
+        if (!empty($selectedAnnee) && array_key_exists('est_active', $selectedAnnee)) {
+            $isSelectedAnneeCloturee = ((int)$selectedAnnee['est_active'] === 0);
+        }
+        if ($tousSemestresClotures) {
+            $isSelectedAnneeCloturee = true;
+        }
+
         // Semestre sélectionné : GET > session > semestre actif
         $selectedSemestreId = isset($_GET['semestre_id']) ? (int)$_GET['semestre_id'] : null;
         if ($selectedSemestreId) {

@@ -130,18 +130,87 @@ class EtudiantBulletinAdminController {
             exit();
         }
 
+        $anneeActive = $this->anneeModel->getActiveYear();
+        $anneeActiveId = $anneeActive ? (int)$anneeActive['id'] : null;
+
+        // Année sélectionnée : GET > session > année active
+        $selectedAnneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
+        if ($selectedAnneeId) {
+            $_SESSION['admin_annee_id'] = $selectedAnneeId;
+        } elseif (isset($_SESSION['admin_annee_id'])) {
+            $selectedAnneeId = (int)$_SESSION['admin_annee_id'];
+        } elseif ($anneeActiveId !== null) {
+            $selectedAnneeId = $anneeActiveId;
+            $_SESSION['admin_annee_id'] = $selectedAnneeId;
+        }
+
         $semestreId = isset($_GET['semestre_id']) ? (int)$_GET['semestre_id'] : null;
         $session = isset($_GET['session']) ? (int)$_GET['session'] : 1;
         if ($session < 1 || $session > 4) {
             $session = 1;
         }
 
+        // Si un semestre est fourni mais ne correspond pas à l'année sélectionnée, on l'ignore
+        // afin de retomber sur le comportement par défaut (Semestre 1 de l'année sélectionnée).
+        if ($semestreId && $selectedAnneeId) {
+            $semestreCheck = $this->semestreModel->getById((int)$semestreId);
+            if (!$semestreCheck || (int)($semestreCheck['annee_universitaire_id'] ?? 0) !== (int)$selectedAnneeId) {
+                $semestreId = null;
+            }
+        }
+
         if (!$semestreId) {
-            $semestreActif = $this->semestreModel->getActiveSemestre();
-            if ($semestreActif) {
-                $semestreId = (int)$semestreActif['id'];
+            // Par défaut, si une année est sélectionnée: prendre le semestre 1 de cette année.
+            $semestresYear = $selectedAnneeId ? $this->semestreModel->getByAnneeUniversitaire($selectedAnneeId) : [];
+
+            // Si aucune donnée de semestre pour cette année (anciennes années), créer automatiquement S1 et S2
+            if ($selectedAnneeId && empty($semestresYear)) {
+                $today = date('Y-m-d');
+
+                $idS1 = $this->semestreModel->create([
+                    'numero' => 1,
+                    'date_debut' => $today,
+                    'date_fin' => $today,
+                    'annee_universitaire_id' => $selectedAnneeId,
+                    'est_ouvert' => 0,
+                    'est_cloture' => 1,
+                ]);
+
+                $idS2 = $this->semestreModel->create([
+                    'numero' => 2,
+                    'date_debut' => $today,
+                    'date_fin' => $today,
+                    'annee_universitaire_id' => $selectedAnneeId,
+                    'est_ouvert' => 0,
+                    'est_cloture' => 1,
+                ]);
+
+                if ($idS1 || $idS2) {
+                    $semestresYear = $this->semestreModel->getByAnneeUniversitaire($selectedAnneeId);
+                }
+            }
+            $semestre1 = null;
+            if (!empty($semestresYear)) {
+                foreach ($semestresYear as $s) {
+                    if (isset($s['numero']) && (int)$s['numero'] === 1) {
+                        $semestre1 = $s;
+                        break;
+                    }
+                }
+            }
+
+            if ($semestre1 && isset($semestre1['id'])) {
+                $semestreId = (int)$semestre1['id'];
             } else {
-                $semestreId = 1;
+                // Fallback: semestre actif (si il est dans l'année sélectionnée), sinon 1.
+                $semestreActif = $this->semestreModel->getActiveSemestre();
+                if ($semestreActif && (!$selectedAnneeId || (int)$semestreActif['annee_universitaire_id'] === (int)$selectedAnneeId)) {
+                    $semestreId = (int)$semestreActif['id'];
+                } elseif (!empty($semestresYear) && isset($semestresYear[0]['id'])) {
+                    $semestreId = (int)$semestresYear[0]['id'];
+                } else {
+                    $semestreId = 1;
+                }
             }
         }
 
@@ -224,8 +293,7 @@ class EtudiantBulletinAdminController {
             unset($n);
         }
 
-        $anneeActive = $this->anneeModel->getActiveYear();
-        $anneeId = $anneeActive ? (int)$anneeActive['id'] : null;
+        $anneeId = $selectedAnneeId;
         $classe = null;
         $semestresDisponibles = [];
         if ($anneeId) {

@@ -90,6 +90,7 @@ class EtudiantController {
         $selectedAnneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
         $hasAnneeInGet = isset($_GET['annee_id']);
         $hasSemestreInGet = isset($_GET['semestre_id']);
+        $hasSessionInGet = isset($_GET['session']);
         if ($selectedAnneeId) {
             $_SESSION['etu_annee_id'] = $selectedAnneeId;
         } elseif ($anneeActive) {
@@ -104,10 +105,45 @@ class EtudiantController {
         $semestresAnnee = [];
         if ($selectedAnneeId) {
             $semestresAnnee = $this->semestreModel->getByAnneeUniversitaire($selectedAnneeId);
+
+            // Si aucune donnée de semestre pour cette année (anciennes années), créer automatiquement S1 et S2
+            if (empty($semestresAnnee)) {
+                $today = date('Y-m-d');
+
+                $this->semestreModel->create([
+                    'numero' => 1,
+                    'date_debut' => $today,
+                    'date_fin' => $today,
+                    'annee_universitaire_id' => $selectedAnneeId,
+                    'est_ouvert' => 0,
+                    'est_cloture' => 1,
+                ]);
+
+                $this->semestreModel->create([
+                    'numero' => 2,
+                    'date_debut' => $today,
+                    'date_fin' => $today,
+                    'annee_universitaire_id' => $selectedAnneeId,
+                    'est_ouvert' => 0,
+                    'est_cloture' => 1,
+                ]);
+
+                $semestresAnnee = $this->semestreModel->getByAnneeUniversitaire($selectedAnneeId);
+            }
         }
 
         $semestreActif = $this->semestreModel->getActiveSemestre();
         $selectedSemestreId = isset($_GET['semestre_id']) ? (int)$_GET['semestre_id'] : null;
+
+        // Si un semestre est fourni mais ne correspond pas à l'année sélectionnée, on l'ignore
+        // afin de retomber sur le comportement par défaut (Semestre 1 de l'année sélectionnée).
+        if ($selectedSemestreId && $selectedAnneeId) {
+            $semestreCheck = $this->semestreModel->getById((int)$selectedSemestreId);
+            if (!$semestreCheck || (int)($semestreCheck['annee_universitaire_id'] ?? 0) !== (int)$selectedAnneeId) {
+                $selectedSemestreId = null;
+                $hasSemestreInGet = false;
+            }
+        }
         if ($selectedSemestreId) {
             $_SESSION['etu_semestre_id'] = $selectedSemestreId;
         } elseif ($hasAnneeInGet && !$hasSemestreInGet && !empty($semestresAnnee)) {
@@ -136,7 +172,11 @@ class EtudiantController {
             $selectedSemestreId = (int)$semestreActif['id'];
         }
 
-        $selectedSession = isset($_GET['session']) ? (int)$_GET['session'] : (isset($_SESSION['etu_session']) ? (int)$_SESSION['etu_session'] : 1);
+        if ($hasAnneeInGet && !$hasSessionInGet) {
+            $selectedSession = 1;
+        } else {
+            $selectedSession = isset($_GET['session']) ? (int)$_GET['session'] : (isset($_SESSION['etu_session']) ? (int)$_SESSION['etu_session'] : 1);
+        }
         if ($selectedSession < 1 || $selectedSession > 4) {
             $selectedSession = 1;
         }
