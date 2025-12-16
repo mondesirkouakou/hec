@@ -58,7 +58,9 @@ ob_start();
             
             <!-- Graphique d'évolution -->
             <div class="chart-container">
-                <canvas id="evolutionChart"></canvas>
+                <div class="chart-scroll">
+                    <canvas id="evolutionChart"></canvas>
+                </div>
             </div>
             
             <!-- Détail par matière -->
@@ -72,11 +74,23 @@ ob_start();
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialisation du graphique d'évolution
-    const ctx = document.getElementById('evolutionChart').getContext('2d');
+    const canvas = document.getElementById('evolutionChart');
+    const ctx = canvas.getContext('2d');
+    const labels = <?= json_encode(array_column($graphique_evolution, 'periode')) ?>;
+
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 576px)').matches;
+    const pxPerLabel = isMobile ? 80 : 50;
+    const desiredWidth = Math.max(canvas.parentElement ? canvas.parentElement.clientWidth : 0, labels.length * pxPerLabel);
+    if (desiredWidth > 0) {
+        if (canvas.parentElement) {
+            canvas.parentElement.style.width = desiredWidth + 'px';
+        }
+    }
+
     const evolutionChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: <?= json_encode(array_column($graphique_evolution, 'periode')) ?>,
+            labels: labels,
             datasets: [{
                 label: 'Moyenne de classe (CC)',
                 data: <?= json_encode(array_column($graphique_evolution, 'moyenne_classe_etudiant')) ?>,
@@ -94,6 +108,15 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: isMobile ? 18 : 10,
+                    right: isMobile ? 8 : 10,
+                    top: 0,
+                    bottom: 0
+                }
+            },
             plugins: {
                 title: {
                     display: true,
@@ -102,16 +125,39 @@ document.addEventListener('DOMContentLoaded', function() {
                         size: 16
                     }
                 },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12
+                    }
+                },
                 tooltip: {
                     mode: 'index',
                     intersect: false,
                 }
             },
             scales: {
+                x: {
+                    ticks: {
+                        maxRotation: isMobile ? 60 : 0,
+                        minRotation: isMobile ? 60 : 0,
+                        autoSkip: !isMobile,
+                        maxTicksLimit: isMobile ? undefined : 6
+                    }
+                },
                 y: {
                     beginAtZero: false,
                     min: 0,
-                    max: 20
+                    max: 20,
+                    ticks: {
+                        padding: isMobile ? 14 : 6,
+                        stepSize: isMobile ? 5 : undefined,
+                        autoSkip: isMobile ? false : true,
+                        maxTicksLimit: isMobile ? 5 : undefined,
+                        font: {
+                            size: isMobile ? 12 : 11
+                        }
+                    }
                 }
             }
         }
@@ -184,6 +230,26 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 360px;
+    overflow-x: auto;
+}
+
+.chart-scroll {
+    height: 100%;
+    min-width: 100%;
+    padding-left: 8px;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+@media (max-width: 576px) {
+    .chart-container {
+        padding: 0.75rem;
+        height: 360px;
+    }
 }
 
 .matieres-container {

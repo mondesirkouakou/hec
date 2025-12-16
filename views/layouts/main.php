@@ -20,7 +20,7 @@
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <div class="user-dropdown">
                             <button type="button" class="d-flex align-items-center p-0 border-0 bg-transparent text-decoration-none" id="userDropdown" style="color: inherit; cursor: pointer;">
-                                <span class="welcome-text me-2 d-none d-md-inline">Bienvenue, <?= htmlspecialchars($_SESSION['display_name'] ?? $_SESSION['username']) ?></span>
+                                <span class="welcome-text me-2">Bienvenue, <?= htmlspecialchars($_SESSION['display_name'] ?? $_SESSION['username']) ?></span>
                                 <div class="user-avatar">
                                     <i class="fas fa-user-circle fa-2x"></i>
                                 </div>
@@ -118,5 +118,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="<?= BASE_URL ?>assets/js/main.js?v=2"></script>
     <script src="<?= BASE_URL ?>assets/js/theme-effects.js"></script>
+    <style>
+        .welcome-text{max-width:55vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+        @media (min-width:768px){.welcome-text{max-width:280px}}
+    </style>
 </body>
 </html>
