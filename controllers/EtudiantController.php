@@ -88,6 +88,8 @@ class EtudiantController {
         }
 
         $selectedAnneeId = isset($_GET['annee_id']) ? (int)$_GET['annee_id'] : null;
+        $hasAnneeInGet = isset($_GET['annee_id']);
+        $hasSemestreInGet = isset($_GET['semestre_id']);
         if ($selectedAnneeId) {
             $_SESSION['etu_annee_id'] = $selectedAnneeId;
         } elseif ($anneeActive) {
@@ -108,6 +110,26 @@ class EtudiantController {
         $selectedSemestreId = isset($_GET['semestre_id']) ? (int)$_GET['semestre_id'] : null;
         if ($selectedSemestreId) {
             $_SESSION['etu_semestre_id'] = $selectedSemestreId;
+        } elseif ($hasAnneeInGet && !$hasSemestreInGet && !empty($semestresAnnee)) {
+            // Clic sur une année => par défaut, afficher le Semestre 1 de cette année
+            $semestre1 = null;
+            foreach ($semestresAnnee as $s) {
+                if (isset($s['numero']) && (int)$s['numero'] === 1) {
+                    $semestre1 = $s;
+                    break;
+                }
+            }
+            if ($semestre1 && isset($semestre1['id'])) {
+                $selectedSemestreId = (int)$semestre1['id'];
+                $_SESSION['etu_semestre_id'] = $selectedSemestreId;
+            } else {
+                // Fallback : prendre le 1er semestre retourné
+                $first = $semestresAnnee[0];
+                if (isset($first['id'])) {
+                    $selectedSemestreId = (int)$first['id'];
+                    $_SESSION['etu_semestre_id'] = $selectedSemestreId;
+                }
+            }
         } elseif (isset($_SESSION['etu_semestre_id'])) {
             $selectedSemestreId = (int)$_SESSION['etu_semestre_id'];
         } elseif ($semestreActif && $semestreActif['annee_universitaire_id'] == $selectedAnneeId) {
@@ -121,7 +143,7 @@ class EtudiantController {
         $_SESSION['etu_session'] = $selectedSession;
 
         // Notes et infos dépendantes du semestre / session sélectionnés
-        $notes = $this->getNotes($selectedSemestreId, $selectedSession);
+        $notes = $this->getNotes($selectedSemestreId, $selectedSession, $selectedAnneeId);
         $classe = $this->getClasse();
         $moyennes = $this->calculerMoyennes();
         $emploi = $this->getEmploiDuTemps();
@@ -573,12 +595,23 @@ class EtudiantController {
                 'moyenne_examen_etudiant' => $moyenneExamen,
             ];
         }
-        return compact('semestres','matieres','filters','stats','notes_par_matiere','graphique_evolution');
+        return compact('semestres','matieres','filters','stats','notes_par_matiere','graphique_evolution','selectedAnneeId');
     }
 
     public function renderNotes() {
         $data = $this->notesData();
         extract($data);
+
+        $backUrlStudent = BASE_URL . 'etudiant/dashboard';
+        $backParams = [];
+        if (!empty($selectedAnneeId)) { $backParams[] = 'annee_id=' . (int)$selectedAnneeId; }
+        if (!empty($filters['semestre_id'])) { $backParams[] = 'semestre_id=' . (int)$filters['semestre_id']; }
+        $sessionBack = isset($_SESSION['etu_session']) ? (int)$_SESSION['etu_session'] : null;
+        if ($sessionBack !== null && $sessionBack >= 1 && $sessionBack <= 4) {
+            $backParams[] = 'session=' . (int)$sessionBack;
+        }
+        if (!empty($backParams)) { $backUrlStudent .= '?' . implode('&', $backParams); }
+
         include __DIR__ . '/../views/etudiant/notes/index.php';
     }
     
@@ -593,6 +626,13 @@ class EtudiantController {
         $semestreInfos = $this->semestreModel->getById($semestreId);
         $anneeId = ($semestreInfos && isset($semestreInfos['annee_universitaire_id'])) ? (int)$semestreInfos['annee_universitaire_id'] : null;
         $notes = $this->getNotes($semestreId, $session, $anneeId);
+
+        $backUrlStudent = BASE_URL . 'etudiant/dashboard';
+        $backParams = [];
+        if (!empty($anneeId)) { $backParams[] = 'annee_id=' . (int)$anneeId; }
+        if (!empty($semestreId)) { $backParams[] = 'semestre_id=' . (int)$semestreId; }
+        if ($session !== null) { $backParams[] = 'session=' . (int)$session; }
+        if (!empty($backParams)) { $backUrlStudent .= '?' . implode('&', $backParams); }
 
         // Pour la session 1, il peut exister plusieurs lignes de notes pour une
         // même matière (notes de classe + notes d'examen, voire anciennes

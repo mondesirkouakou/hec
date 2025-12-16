@@ -8,7 +8,7 @@ ob_start();
 </div>
 
 <div class="mb-3">
-    <a href="<?= BASE_URL ?>etudiant/dashboard" class="btn btn-sm btn-secondary">
+    <a href="<?= htmlspecialchars(isset($backUrlStudent) && !empty($backUrlStudent) ? $backUrlStudent : (BASE_URL . 'etudiant/dashboard')) ?>" class="btn btn-sm btn-secondary">
         <i class="fas fa-arrow-left"></i> Retour au dashboard
     </a>
 </div>

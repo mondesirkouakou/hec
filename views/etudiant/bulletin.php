@@ -18,7 +18,7 @@ if ($adminBulletinMode) {
     $backUrl = BASE_URL . 'admin/dashboard';
     $backLabel = 'Retour au dashboard admin';
 } else {
-    $backUrl = BASE_URL . 'etudiant/dashboard';
+    $backUrl = isset($backUrlStudent) && !empty($backUrlStudent) ? $backUrlStudent : (BASE_URL . 'etudiant/dashboard');
     $backLabel = 'Retour au dashboard';
 }
 ?>
