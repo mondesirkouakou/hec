@@ -44,13 +44,18 @@ class EtudiantBulletinAdminController {
         return $this->db->fetch($sql, $params);
     }
 
-    private function getNotesForEtudiant($etudiantId, $semestreId = null, $session = null) {
+    private function getNotesForEtudiant($etudiantId, $semestreId = null, $session = null, $anneeUniversitaireId = null) {
         $params = ['etudiant_id' => (int)$etudiantId];
         $whereClause = '';
 
         if ($semestreId) {
             $whereClause .= ' AND n.semestre_id = :semestre_id';
             $params['semestre_id'] = (int)$semestreId;
+        }
+
+        if ($anneeUniversitaireId) {
+            $whereClause .= ' AND s.annee_universitaire_id = :annee_universitaire_id';
+            $params['annee_universitaire_id'] = (int)$anneeUniversitaireId;
         }
 
         if ($session !== null) {
@@ -140,7 +145,9 @@ class EtudiantBulletinAdminController {
             }
         }
 
-        $notes = $this->getNotesForEtudiant($etudiantId, $semestreId, $session);
+        $semestreInfos = $this->semestreModel->getById((int)$semestreId);
+        $anneeIdBulletin = ($semestreInfos && isset($semestreInfos['annee_universitaire_id'])) ? (int)$semestreInfos['annee_universitaire_id'] : null;
+        $notes = $this->getNotesForEtudiant($etudiantId, $semestreId, $session, $anneeIdBulletin);
 
         if (!empty($notes)) {
             $sessionInt = (int)$session;
@@ -230,7 +237,7 @@ class EtudiantBulletinAdminController {
 
         $totalCreditsCumul = 0;
         if ($semestreId) {
-            $notesToutesSessions = $this->getNotesForEtudiant($etudiantId, $semestreId, null);
+            $notesToutesSessions = $this->getNotesForEtudiant($etudiantId, $semestreId, null, $anneeIdBulletin);
             if (is_array($notesToutesSessions)) {
                 foreach ($notesToutesSessions as $n) {
                     $sessionNote = isset($n['session']) ? (int)$n['session'] : 1;

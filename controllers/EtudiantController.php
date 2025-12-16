@@ -169,13 +169,18 @@ class EtudiantController {
     /**
      * Récupère les notes de l'étudiant
      */
-    public function getNotes($semestreId = null, $session = null) {
+    public function getNotes($semestreId = null, $session = null, $anneeUniversitaireId = null) {
         $params = ['etudiant_id' => $this->etudiant['id']];
         $whereClause = '';
         
         if ($semestreId) {
             $whereClause .= ' AND n.semestre_id = :semestre_id';
             $params['semestre_id'] = $semestreId;
+        }
+
+        if ($anneeUniversitaireId) {
+            $whereClause .= ' AND s.annee_universitaire_id = :annee_universitaire_id';
+            $params['annee_universitaire_id'] = (int)$anneeUniversitaireId;
         }
 
         if ($session !== null) {
@@ -363,7 +368,9 @@ class EtudiantController {
         // Sur le bulletin, la moyenne de semestre est construite à partir des moyennes finales
         // des matières (session 1 : 40% classe + 60% examen) pondérées par les crédits,
         // puis divisée par 30.
-        $notesSemestre = $this->getNotes((int)$semestreId, 1);
+        $semestreInfos = $this->semestreModel->getById((int)$semestreId);
+        $anneeId = ($semestreInfos && isset($semestreInfos['annee_universitaire_id'])) ? (int)$semestreInfos['annee_universitaire_id'] : null;
+        $notesSemestre = $this->getNotes((int)$semestreId, 1, $anneeId);
         if (empty($notesSemestre) || !is_array($notesSemestre)) {
             return 0.0;
         }
@@ -426,10 +433,10 @@ class EtudiantController {
             'matiere_id' => isset($_GET['matiere_id']) && $_GET['matiere_id'] !== '' ? (int)$_GET['matiere_id'] : null,
         ];
 
-        $notes = $this->getNotes($filters['semestre_id']);
+        $notes = $this->getNotes($filters['semestre_id'], null, $selectedAnneeId);
         // Pour le graphique "Évolution de vos moyennes", on veut uniquement les moyennes de la session 1
         // (et inclure les anciennes lignes sans session, comme la logique de getNotes(session=1)).
-        $notesGraph = $this->getNotes($filters['semestre_id'], 1);
+        $notesGraph = $this->getNotes($filters['semestre_id'], 1, $selectedAnneeId);
 
         if ($selectedAnneeId !== null) {
             $notes = array_values(array_filter($notes, function ($n) use ($selectedAnneeId) {
@@ -583,7 +590,9 @@ class EtudiantController {
             $session = 1;
         }
 
-        $notes = $this->getNotes($semestreId, $session);
+        $semestreInfos = $this->semestreModel->getById($semestreId);
+        $anneeId = ($semestreInfos && isset($semestreInfos['annee_universitaire_id'])) ? (int)$semestreInfos['annee_universitaire_id'] : null;
+        $notes = $this->getNotes($semestreId, $session, $anneeId);
 
         // Pour la session 1, il peut exister plusieurs lignes de notes pour une
         // même matière (notes de classe + notes d'examen, voire anciennes
@@ -678,7 +687,7 @@ class EtudiantController {
         // Calcul du total des crédits cumulés au semestre (toutes sessions jusqu'à la session actuelle)
         $totalCreditsCumul = 0;
         if ($semestreId) {
-            $notesToutesSessions = $this->getNotes($semestreId, null); // sans filtrer par session
+            $notesToutesSessions = $this->getNotes($semestreId, null, $anneeId); // sans filtrer par session
             if (is_array($notesToutesSessions)) {
                 foreach ($notesToutesSessions as $n) {
                     // Session associée à cette note (1 par défaut si NULL)
