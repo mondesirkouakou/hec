@@ -266,13 +266,13 @@ ob_start();
 
 <!-- Modal grand tableau des notes de classe -->
 <div class="modal fade" id="notesClasseModal" tabindex="-1" aria-labelledby="notesClasseModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="max-height: 90vh;">
+            <div class="modal-header" style="position: sticky; top: 0; z-index: 1055; background: #fff; border-bottom: 2px solid #dee2e6;">
                 <h5 class="modal-title" id="notesClasseModalLabel">Mes notes de classe - Détail</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer" style="font-size: 1.2rem;"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="overflow: auto; max-height: calc(90vh - 130px);">
                 <?php if (!empty($notes_par_matiere)): ?>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped mb-0">
@@ -338,9 +338,11 @@ ob_start();
                     <p class="text-muted">Aucune note enregistrée pour le moment.</p>
                 <?php endif; ?>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <a href="<?= BASE_URL ?>etudiant/notes" class="btn btn-primary">
+            <div class="modal-footer" style="position: sticky; bottom: 0; z-index: 1055; background: #fff; border-top: 2px solid #dee2e6; padding: 15px;">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Fermer
+                </button>
+                <a href="<?= BASE_URL ?>etudiant/notes" class="btn btn-primary btn-lg">
                     <i class="fas fa-chart-line"></i> Aller à la page Mes notes
                 </a>
             </div>
@@ -349,6 +351,69 @@ ob_start();
 </div>
 
 <style>
+/* Styles pour le modal des notes de classe */
+#notesClasseModal .modal-dialog {
+    max-width: 95vw;
+    margin: 1rem auto;
+}
+
+#notesClasseModal .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+#notesClasseModal .modal-header {
+    background: linear-gradient(135deg, #0752dd 0%, #0645b8 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+#notesClasseModal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 1;
+}
+
+#notesClasseModal .modal-body {
+    padding: 20px;
+}
+
+#notesClasseModal .table-responsive {
+    max-height: 60vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#notesClasseModal .table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8f9fa;
+}
+
+#notesClasseModal .table th,
+#notesClasseModal .table td {
+    white-space: nowrap;
+    padding: 10px 12px;
+}
+
+#notesClasseModal .modal-footer {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    #notesClasseModal .modal-dialog {
+        max-width: 100%;
+        margin: 0.5rem;
+    }
+    
+    #notesClasseModal .modal-footer .btn {
+        flex: 1;
+        min-width: 140px;
+    }
+}
+
 /* Styles spécifiques au tableau de bord */
 .dashboard-header {
     display: flex;

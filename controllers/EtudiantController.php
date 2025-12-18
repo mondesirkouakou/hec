@@ -73,7 +73,11 @@ class EtudiantController {
             }
 
             if ($minDebut !== null) {
-                $upperDebut = 2098; // aller jusqu'à 2098-2099
+                // Limiter la timeline : années existantes + 2 années futures max
+                $currentYear = (int)date('Y');
+                $maxDebut = max(array_keys($indexParDebut));
+                $upperDebut = min($maxDebut + 2, $currentYear + 3); // max 2 ans après la dernière existante ou 3 ans après aujourd'hui
+                
                 for ($y = $minDebut; $y <= $upperDebut; $y++) {
                     $exists = isset($indexParDebut[$y]);
                     $record = $exists ? $indexParDebut[$y] : null;

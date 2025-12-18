@@ -1201,9 +1201,12 @@ body {
     box-shadow: 0 0 20px rgba(7, 82, 221, 0.4);
 }
 
-/* Titre du tableau de bord admin en blanc */
-.dashboard-title {
-  color: var(--white) !important;
+/* Titre du tableau de bord admin en bleu */
+.dashboard-title,
+.admin-dashboard .dashboard-title,
+.admin-dashboard .dashboard-header .dashboard-title,
+h1.dashboard-title {
+  color: #0752dd !important;
 }
 
 /* Rendre le texte des badges noir dans la page admin */

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/theme-custom.css?v=3">
+    <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/premium-ux.css?v=1">
 </head>
 <body>
     <header class="animated-header">
@@ -118,6 +119,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="<?= BASE_URL ?>assets/js/main.js?v=2"></script>
     <script src="<?= BASE_URL ?>assets/js/theme-effects.js"></script>
+    <script src="<?= BASE_URL ?>assets/js/premium-ux.js?v=1"></script>
     <style>
         .welcome-text{max-width:55vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
         @media (min-width:768px){.welcome-text{max-width:280px}}

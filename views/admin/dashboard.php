@@ -4,9 +4,9 @@ ob_start();
 ?>
 
 <div class="container-fluid admin-dashboard">
-    <div class="dashboard-header animated-header mb-3">
+    <div class="dashboard-header animated-header mb-3" style="background: #ffffff !important;">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h1 class="dashboard-title mb-0">Tableau de bord Administrateur</h1>
+            <h1 class="dashboard-title mb-0" style="color: #0752dd !important;">Tableau de bord Administrateur</h1>
         </div>
 
         <!-- Années universitaires en boutons (timeline continue) -->
@@ -575,6 +575,19 @@ document.addEventListener('DOMContentLoaded', function() {
 .sem-pill.active {
     box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 4px 10px rgba(0,0,0,0.2);
     transform: translateY(-1px);
+}
+
+/* Semestre sélectionné - border bleu */
+.sem-pill.active {
+    border: 3px solid #0752dd !important;
+    box-shadow: 0 0 0 3px rgba(7, 82, 221, 0.25), 0 4px 10px rgba(0,0,0,0.2) !important;
+    transform: translateY(-1px);
+}
+
+/* Année clôturée sélectionnée - border rouge */
+.year-pill.btn-danger.active {
+    border: 3px solid #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 4px 10px rgba(0,0,0,0.2) !important;
 }
 
 .year-pill:hover,

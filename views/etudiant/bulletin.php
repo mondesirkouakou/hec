@@ -57,10 +57,12 @@ if ($adminBulletinMode) {
 @media print {
     .page {
         width: 210mm !important;
-        min-height: 297mm !important;
-        margin: 0 auto !important;
-        padding: 12mm !important;
+        height: 297mm !important;
+        max-height: 297mm !important;
+        margin: 0 !important;
+        padding: 8mm !important;
         box-shadow: none !important;
+        overflow: hidden !important;
     }
 }
 </style>
@@ -68,9 +70,26 @@ if ($adminBulletinMode) {
     <a href="<?= htmlspecialchars($backUrl) ?>" class="btn btn-sm btn-secondary">
         <i class="fas fa-arrow-left"></i> <?= htmlspecialchars($backLabel) ?>
     </a>
-    <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.print();">
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="printBulletin();">
         <i class="fas fa-print"></i> Imprimer mon bulletin
     </button>
+    <script>
+    function printBulletin() {
+        // Détecter si on est sur mobile
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        
+        if (isMobile) {
+            document.body.classList.add('mobile-print');
+        }
+        
+        window.print();
+        
+        // Retirer la classe après l'impression
+        setTimeout(function() {
+            document.body.classList.remove('mobile-print');
+        }, 1000);
+    }
+    </script>
 </div>
 <?php if ($adminBulletinMode): ?>
     <div class="no-print mb-3">
@@ -394,27 +413,129 @@ if (!$isDownload) {
 
 <style>
 @page {
-    size: A4;
-    margin: 15mm; /* marges 1,5 cm tout autour */
+    size: A4 portrait;
+    margin: 0 !important;
 }
 
 @media print {
-    body { margin: 0; background: white; }
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
     body * { visibility: hidden; }
     .page, .page * { visibility: visible; }
     .no-print { display: none !important; }
 
     .page {
-        box-shadow: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        max-width: 210mm !important;
+        max-height: 297mm !important;
         margin: 0 !important;
-        padding: 0 !important;
+        padding: 8mm !important;
+        box-shadow: none !important;
         border: none !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        transform-origin: top left !important;
     }
 
     .page-main {
         flex: 1;
+        overflow: hidden !important;
+    }
+
+    .page table {
+        font-size: 11px !important;
+    }
+
+    .page th, .page td {
+        padding: 3px !important;
+    }
+
+    .page .header h2 {
+        font-size: 16px !important;
+        margin: 8px 0 !important;
+    }
+
+    .page .student-info {
+        padding: 6px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .page .footer-summary {
+        margin-top: 8px !important;
+        padding: 6px !important;
+    }
+
+    .page .appreciation {
+        margin-top: 8px !important;
+        margin-bottom: 15px !important;
+        font-size: 12px !important;
+    }
+
+    .page .signatures {
+        margin-top: 15px !important;
+    }
+
+    .page .page-footer {
+        margin-top: 10mm !important;
+        font-size: 9px !important;
+    }
+}
+
+/* Styles d'impression spécifiques pour mobile (activés via JavaScript) */
+@media print {
+    /* Quand mobile-print est actif, on change l'approche */
+    body.mobile-print {
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    body.mobile-print * {
+        visibility: visible !important;
+    }
+
+    body.mobile-print .no-print,
+    body.mobile-print .animated-header,
+    body.mobile-print .animated-footer,
+    body.mobile-print .navbar,
+    body.mobile-print .back-to-top {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    body.mobile-print .page {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        padding: 5mm !important;
+        transform: scale(0.78) !important;
+        transform-origin: top left !important;
+    }
+
+    body.mobile-print .page table {
+        font-size: 9px !important;
+    }
+
+    body.mobile-print .page th,
+    body.mobile-print .page td {
+        padding: 2px !important;
     }
 }
 </style>
