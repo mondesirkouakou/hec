@@ -1,11 +1,46 @@
 <?php
 $isDownload = isset($download) && $download;
 
+$isPrintOnly = isset($_GET['print']) && (string)$_GET['print'] === '1';
+$isDownload = $isDownload || $isPrintOnly;
+
 if (!$isDownload) {
     $pageTitle = 'Mon bulletin';
     ob_start();
 }
 ?>
+
+<?php if ($isPrintOnly): ?>
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Impression bulletin</title>
+    <style>
+        @page { size: A4 portrait; margin: 0; }
+        html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: Arial, sans-serif; }
+        .print-sheet { width: 210mm; height: 297mm; margin: 0; padding: 0; overflow: hidden; }
+        .page { width: 210mm; margin: 0; padding: 6mm !important; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; }
+        .page table { font-size: 11px; }
+        .page th, .page td { padding: 3px; }
+
+        /* Compacter le footer pour éviter une 2ème page */
+        .page .page-footer { margin-top: 8mm !important; font-size: 8px !important; line-height: 1.25 !important; }
+
+        /* Le scaling est appliqué dynamiquement sur ce wrapper */
+        .print-scale-wrap { width: 210mm; transform-origin: top left; }
+
+        @media print {
+            html, body { width: 210mm; height: 297mm; overflow: hidden; }
+            .print-sheet { page-break-after: avoid; break-after: avoid-page; page-break-inside: avoid; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+<?php endif; ?>
 
 <?php if (!$isDownload): ?>
 <?php
@@ -77,17 +112,23 @@ if ($adminBulletinMode) {
     function printBulletin() {
         // Détecter si on est sur mobile
         var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        
+
         if (isMobile) {
-            document.body.classList.add('mobile-print');
+            printBulletinMobile();
+            return;
         }
-        
+
         window.print();
-        
-        // Retirer la classe après l'impression
-        setTimeout(function() {
-            document.body.classList.remove('mobile-print');
-        }, 1000);
+    }
+
+    function printBulletinMobile() {
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set('print', '1');
+            window.location.href = url.toString();
+        } catch (e) {
+            window.location.href = window.location.href + (window.location.search ? '&' : '?') + 'print=1';
+        }
     }
     </script>
 </div>
@@ -121,6 +162,11 @@ if ($adminBulletinMode) {
         </form>
     </div>
 <?php endif; ?>
+<?php endif; ?>
+
+<?php if ($isPrintOnly): ?>
+<div class="print-sheet">
+    <div class="print-scale-wrap">
 <?php endif; ?>
 
 <div class="page" style="width:210mm;min-height:297mm;background-color:white;margin:0 auto;padding:12mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:14px;font-family:Arial,sans-serif;position:relative;padding-bottom:6mm;display:flex;flex-direction:column;">
@@ -404,6 +450,55 @@ if ($adminBulletinMode) {
     </div>
  </div>
 
+<?php if ($isPrintOnly): ?>
+    </div><!-- /.print-scale-wrap -->
+</div><!-- /.print-sheet -->
+<?php endif; ?>
+
+<?php if ($isPrintOnly): ?>
+<script>
+function fitToSingleA4Page() {
+    var sheet = document.querySelector('.print-sheet');
+    var wrap = document.querySelector('.print-scale-wrap');
+    if (!sheet || !wrap) return;
+
+    // Reset any previous scale
+    wrap.style.transform = 'scale(1)';
+
+    // Use scrollHeight (content height) vs available sheet height
+    var available = sheet.clientHeight;
+    var content = wrap.scrollHeight;
+    if (!available || !content) return;
+
+    var scale = Math.min(1, available / content);
+    // Safety margin to avoid spilling to page 2 (footer lines)
+    scale = Math.max(0.5, Math.min(1, scale * 0.975));
+
+    wrap.style.transform = 'scale(' + scale.toFixed(4) + ')';
+}
+
+window.addEventListener('load', function () {
+    // Wait a bit for layout/images
+    setTimeout(function () {
+        fitToSingleA4Page();
+        setTimeout(function () {
+            window.print();
+        }, 200);
+    }, 250);
+});
+
+window.addEventListener('afterprint', function () {
+    setTimeout(function () {
+        if (window.history.length > 1) {
+            window.history.back();
+        }
+    }, 250);
+});
+</script>
+</body>
+</html>
+<?php endif; ?>
+
 <?php
 if (!$isDownload) {
     $content = ob_get_clean();
@@ -411,6 +506,7 @@ if (!$isDownload) {
 }
 ?>
 
+<?php if (!$isPrintOnly): ?>
 <style>
 @page {
     size: A4 portrait;
@@ -539,3 +635,4 @@ if (!$isDownload) {
     }
 }
 </style>
+<?php endif; ?>
