@@ -1258,13 +1258,18 @@ body.dark-mode .table tbody tr:hover {
 
 body.dark-mode .form-control {
     background: #ffffff !important;
-    color: #0b1120 !important;
-    border-color: #ced4da !important;
+    color: #0a0a0a !important;
+    border-color: #3b82f6 !important;
 }
 
 body.dark-mode .form-control::placeholder {
-    color: #0b1120 !important;
-    opacity: 0.5;
+    color: #6b7280 !important;
+    opacity: 0.7;
+}
+
+body.dark-mode .form-control:focus {
+    border-color: #0752dd !important;
+    box-shadow: 0 0 0 0.2rem rgba(7, 82, 221, 0.25) !important;
 }
 
 body.dark-mode .alert {
@@ -1284,12 +1289,12 @@ body.dark-mode .dropdown-item {
 }
 
 body.dark-mode .dropdown-item:hover {
-    background: #111827 !important;
+    background: #0a0a0a !important;
     color: #ffffff !important;
 }
 
 body.dark-mode .back-to-top {
-    background: #111827 !important;
+    background: #0a0a0a !important;
     border-color: #1f2937 !important;
 }
 
@@ -1357,7 +1362,7 @@ body.dark-mode .badge-success {
 
 body.dark-mode .badge-warning {
     background: #f59e0b !important;
-    color: #000000 !important;
+    color: #0a0a0a !important;
 }
 
 body.dark-mode .badge-danger {
@@ -1449,7 +1454,7 @@ body.dark-mode [id*="bulletin"],
 body.dark-mode [id*="bulletin"] *,
 body.dark-mode [class*="bulletin"],
 body.dark-mode [class*="bulletin"] * {
-    color: #000000 !important;
+    color: #0a0a0a !important;
     background: #ffffff !important;
 }
 
@@ -1458,7 +1463,7 @@ body.dark-mode .bulletin-page-content table,
 body.dark-mode .bulletin-page-content table *,
 body.dark-mode .bulletin-page-content .table,
 body.dark-mode .bulletin-page-content .table * {
-    color: #000000 !important;
+    color: #0a0a0a !important;
     background: #ffffff !important;
 }
 
@@ -1514,45 +1519,106 @@ body.dark-mode .student-notes-statistics-card:hover * {
     transform: none !important;
 }
 
-/* Dark mode for admin dashboard */
-body.dark-mode .admin-dashboard .dashboard-header {
-    background: #020617 !important;
+
+/* Dark mode for profile page */
+body.dark-mode .container {
+    background: transparent !important;
 }
 
-body.dark-mode .admin-dashboard .info-card,
-body.dark-mode .admin-dashboard .success-card,
-body.dark-mode .admin-dashboard .warning-card,
-body.dark-mode .admin-dashboard .actions-card {
+body.dark-mode .card {
     background: #020617 !important;
     border-color: #1f2937 !important;
 }
 
-body.dark-mode .admin-dashboard .card-body {
+body.dark-mode .card-header {
     background: #020617 !important;
-}
-
-body.dark-mode .admin-dashboard .text-gray-800 {
+    border-bottom-color: #1f2937 !important;
     color: #ffffff !important;
 }
 
-body.dark-mode .admin-dashboard .text-gray-300 {
+body.dark-mode .card-body {
+    background: #020617 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .form-label {
+    color: #ffffff !important;
+}
+
+body.dark-mode .form-text {
     color: #9ca3af !important;
 }
 
-body.dark-mode .admin-dashboard .card-header-primary {
-    background: #020617 !important;
-    border-bottom-color: #1f2937 !important;
+body.dark-mode .alert-info {
+    background: #1e3a8a !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
 }
 
-body.dark-mode .admin-dashboard .btn-light {
+body.dark-mode .btn-outline-secondary {
     background: #1f2937 !important;
     color: #ffffff !important;
     border-color: #374151 !important;
 }
 
-body.dark-mode .admin-dashboard .btn-light:hover {
+body.dark-mode .btn-outline-secondary:hover {
     background: #374151 !important;
     border-color: #4b5563 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode h2,
+body.dark-mode h5 {
+    color: #ffffff !important;
+}
+
+body.dark-mode hr {
+    border-color: #1f2937 !important;
+    opacity: 1 !important;
+}
+
+/* CRITICAL FIX: Force visible text in form inputs on profile page */
+body.dark-mode input.form-control,
+body.dark-mode input[type="text"].form-control,
+body.dark-mode input[type="password"].form-control,
+body.dark-mode textarea.form-control,
+body.dark-mode select.form-control {
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+    border-color: #3b82f6 !important;
+}
+
+body.dark-mode input.form-control::placeholder,
+body.dark-mode input[type="text"].form-control::placeholder,
+body.dark-mode input[type="password"].form-control::placeholder,
+body.dark-mode textarea.form-control::placeholder {
+    color: #6b7280 !important;
+    opacity: 0.7 !important;
+}
+
+body.dark-mode input.form-control:focus,
+body.dark-mode input[type="text"].form-control:focus,
+body.dark-mode input[type="password"].form-control:focus,
+body.dark-mode textarea.form-control:focus,
+body.dark-mode select.form-control:focus {
+    border-color: #0752dd !important;
+    box-shadow: 0 0 0 0.2rem rgba(7, 82, 221, 0.25) !important;
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+}
+
+/* Fix select dropdown options visibility */
+body.dark-mode select.form-control option,
+body.dark-mode select option {
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+}
+
+body.dark-mode select.form-control optgroup,
+body.dark-mode select optgroup {
+    background: #f3f4f6 !important;
+    color: #0a0a0a !important;
+    font-weight: bold !important;
 }
 
 /* Fix modal backdrop and z-index issues */

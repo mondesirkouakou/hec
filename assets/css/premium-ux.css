@@ -838,9 +838,33 @@ body.dark-mode .card {
 }
 
 body.dark-mode .form-control {
-    background: var(--surface-primary);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: #ffffff !important;
+    border-color: #3b82f6 !important;
+    color: #0a0a0a !important;
+}
+
+body.dark-mode .form-control::placeholder {
+    color: #6b7280 !important;
+    opacity: 0.7;
+}
+
+body.dark-mode .form-control:focus {
+    border-color: #0752dd !important;
+    box-shadow: 0 0 0 0.2rem rgba(7, 82, 221, 0.25) !important;
+}
+
+/* Fix select dropdown options visibility */
+body.dark-mode select.form-control option,
+body.dark-mode select option {
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+}
+
+body.dark-mode select.form-control optgroup,
+body.dark-mode select optgroup {
+    background: #f3f4f6 !important;
+    color: #0a0a0a !important;
+    font-weight: bold !important;
 }
 
 body.dark-mode .table {
