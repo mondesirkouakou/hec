@@ -330,10 +330,13 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if (isset($classe['statut_listes']) && in_array($classe['statut_listes'], ['en_attente', 'validee'], true)): ?>
-                                        <?= (int)($classe['effectif'] ?? 0) ?> étudiants
-                                    <?php else: ?>
-                                        <span class="text-muted">Non soumises</span>
+                                    <?php 
+                                    $effectif = (int)($classe['effectif'] ?? 0);
+                                    $statutListes = $classe['statut_listes'] ?? null;
+                                    ?>
+                                    <?= $effectif ?> étudiant<?= $effectif > 1 ? 's' : '' ?>
+                                    <?php if (!$statutListes || !in_array($statutListes, ['en_attente', 'validee'], true)): ?>
+                                        <br><small class="text-muted">(Listes non soumises)</small>
                                     <?php endif; ?>
                                 </td>
                                 <td>

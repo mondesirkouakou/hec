@@ -51,6 +51,23 @@ class EtudiantController {
         $annees = $this->anneeModel->getAll();
         $anneeActive = $this->anneeModel->getActiveYear();
 
+        // Déterminer l'année de début à afficher pour la timeline (année d'entrée / activation)
+        // On s'appuie sur la première inscription de l'étudiant.
+        $etuMinDebut = null;
+        try {
+            $db = Database::getInstance();
+            $etuMinDebut = $db->fetchColumn(
+                "SELECT MIN(a.annee_debut)
+                 FROM inscriptions i
+                 JOIN annees_universitaires a ON a.id = i.annee_universitaire_id
+                 WHERE i.etudiant_id = :etudiant_id",
+                ['etudiant_id' => (int)$this->etudiant['id']]
+            );
+            $etuMinDebut = $etuMinDebut !== false && $etuMinDebut !== null ? (int)$etuMinDebut : null;
+        } catch (Exception $e) {
+            $etuMinDebut = null;
+        }
+
         // Construire une timeline d'années continues (comme sur le dashboard admin)
         $anneeTimeline = [];
         if (!empty($annees)) {
@@ -70,6 +87,13 @@ class EtudiantController {
                     $minDebut = $debut;
                 }
                 $indexParDebut[$debut] = $a;
+            }
+
+            // Filtrer : l'étudiant ne doit pas voir les années antérieures à sa première inscription
+            if ($etuMinDebut !== null) {
+                if ($minDebut === null || $etuMinDebut > $minDebut) {
+                    $minDebut = $etuMinDebut;
+                }
             }
 
             if ($minDebut !== null) {
@@ -95,6 +119,16 @@ class EtudiantController {
         $hasAnneeInGet = isset($_GET['annee_id']);
         $hasSemestreInGet = isset($_GET['semestre_id']);
         $hasSessionInGet = isset($_GET['session']);
+
+        // Sécuriser la sélection d'année: empêcher l'accès à une année antérieure à l'année d'entrée.
+        if ($selectedAnneeId && $etuMinDebut !== null) {
+            $selectedYearRecord = $this->anneeModel->getById($selectedAnneeId);
+            $selectedDebut = (int)($selectedYearRecord['annee_debut'] ?? 0);
+            if ($selectedDebut && $selectedDebut < $etuMinDebut) {
+                $selectedAnneeId = null;
+                $hasAnneeInGet = false;
+            }
+        }
         if ($selectedAnneeId) {
             $_SESSION['etu_annee_id'] = $selectedAnneeId;
         } elseif ($anneeActive) {

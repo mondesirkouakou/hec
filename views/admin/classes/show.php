@@ -3,6 +3,40 @@ $pageTitle = 'Détails de la classe';
 ob_start();
 ?>
 
+<style>
+/* Force table visibility on admin class detail page - CRITICAL FIX */
+body.admin-class-detail-page .card,
+body.admin-class-detail-page .card *,
+body.admin-class-detail-page .table,
+body.admin-class-detail-page .table *,
+body.admin-class-detail-page .table-responsive,
+body.admin-class-detail-page .table-responsive * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+body.admin-class-detail-page .card:hover,
+body.admin-class-detail-page .card:hover *,
+body.admin-class-detail-page .table:hover,
+body.admin-class-detail-page .table:hover *,
+body.admin-class-detail-page .table tbody tr:hover,
+body.admin-class-detail-page .table tbody tr:hover * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+}
+</style>
+
+<script>
+// Add page-specific class to body for scoped CSS
+if (document.body && !document.body.classList.contains('admin-class-detail-page')) {
+    document.body.classList.add('admin-class-detail-page');
+}
+</script>
+
 <div class="page-header">
     <h1><i class="fas fa-chalkboard"></i> Détails de la classe</h1>
     <div class="page-actions">

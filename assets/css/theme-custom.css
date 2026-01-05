@@ -1006,41 +1006,13 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* Effet de particules */
+/* Effet de particules - DISABLED */
 .particles {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    pointer-events: none;
+    display: none !important;
 }
 
 .particle {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    animation: float-particle 6s infinite linear;
-}
-
-@keyframes float-particle {
-    0% {
-        transform: translateY(100vh) translateX(0);
-        opacity: 0;
-    }
-    10% {
-        opacity: 1;
-    }
-    90% {
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(-100vh) translateX(100px);
-        opacity: 0;
-    }
+    display: none !important;
 }
 
 /* Dashboard cards avec effets spéciaux */
@@ -1222,92 +1194,451 @@ h1.dashboard-title {
    Activé via body.dark-mode
    ========================== */
 body.dark-mode {
-    background: #0b1120;
-    color: #e5e7eb;
+    background: #0b1120 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode *:not([id*="bulletin"]):not([class*="bulletin"]) {
+    color: #ffffff !important;
 }
 
 body.dark-mode .animated-header,
 body.dark-mode .animated-footer {
-    background: #020617;
-    border-color: #020617;
+    background: #020617 !important;
+    border-color: #020617 !important;
 }
 
 body.dark-mode .logo-title a {
-    color: #e5e7eb;
+    color: #ffffff !important;
 }
 
 body.dark-mode .welcome-text {
-    color: #e5e7eb;
+    color: #ffffff !important;
 }
 
 body.dark-mode .content-wrapper {
-    background: #020617;
+    background: #020617 !important;
 }
 
 body.dark-mode .card {
-    background: #020617;
-    border-color: #1f2937;
+    background: #020617 !important;
+    border-color: #1f2937 !important;
 }
 
 body.dark-mode .card-header {
-    background: linear-gradient(135deg, #020617, #111827);
-    border-bottom-color: #1f2937;
+    background: #020617 !important;
+    border-bottom-color: #1f2937 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .card-body {
+    background: #020617 !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .table {
-    border-color: #1f2937;
-    background: #020617;
+    border-color: #1f2937 !important;
+    background: #020617 !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .table thead th {
-    background: linear-gradient(135deg, #020617, #111827);
+    background: #020617 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .table tbody td {
+    background: #020617 !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .table tbody tr:hover {
-    background: rgba(248, 250, 252, 0.03);
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 body.dark-mode .form-control {
-    background: #020617;
-    color: #e5e7eb;
-    border-color: #1f2937;
+    background: #ffffff !important;
+    color: #0b1120 !important;
+    border-color: #ced4da !important;
 }
 
 body.dark-mode .form-control::placeholder {
-    color: #6b7280;
+    color: #0b1120 !important;
+    opacity: 0.5;
 }
 
 body.dark-mode .alert {
-    background: #020617;
-    color: #e5e7eb;
-    border-color: #1f2937;
+    background: #020617 !important;
+    color: #ffffff !important;
+    border-color: #1f2937 !important;
 }
 
 body.dark-mode .dropdown-menu {
-    background: #020617;
-    color: #e5e7eb;
-    border-color: #1f2937;
+    background: #020617 !important;
+    color: #ffffff !important;
+    border-color: #1f2937 !important;
 }
 
 body.dark-mode .dropdown-item {
-    color: #e5e7eb;
+    color: #ffffff !important;
 }
 
 body.dark-mode .dropdown-item:hover {
-    background: #111827;
-    color: #f9fafb;
+    background: #111827 !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .back-to-top {
-    background: #111827;
-    border-color: #1f2937;
+    background: #111827 !important;
+    border-color: #1f2937 !important;
 }
 
 body.dark-mode .modal-content {
-    background: #020617;
-    color: #e5e7eb;
+    background: #020617 !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .modal-footer {
-    background: #020617;
+    background: #020617 !important;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6 {
+    color: #ffffff !important;
+}
+
+body.dark-mode .card-title,
+body.dark-mode .card-header h6,
+body.dark-mode .card-header h5 {
+    color: #ffffff !important;
+}
+
+body.dark-mode .table th,
+body.dark-mode .table td {
+    color: #ffffff !important;
+}
+
+body.dark-mode label,
+body.dark-mode .form-label {
+    color: #ffffff !important;
+}
+
+body.dark-mode p,
+body.dark-mode span:not(.badge),
+body.dark-mode div,
+body.dark-mode a {
+    color: #ffffff !important;
+}
+
+body.dark-mode .text-muted {
+    color: #ffffff !important;
+    opacity: 0.7;
+}
+
+/* Keep badges readable */
+body.dark-mode .badge {
+    background: #1f2937 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .badge-primary {
+    background: #0752dd !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .badge-success {
+    background: #10b981 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .badge-warning {
+    background: #f59e0b !important;
+    color: #000000 !important;
+}
+
+body.dark-mode .badge-danger {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* Dark mode for student dashboard cards - Enhanced visibility */
+body.dark-mode .dashboard-cards {
+    color: #ffffff !important;
+}
+
+body.dark-mode .dashboard-card {
+    background: linear-gradient(135deg, #1e3a8a 0%, #0752dd 100%) !important;
+    color: #ffffff !important;
+    border: 2px solid #3b82f6 !important;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+}
+
+body.dark-mode .dashboard-card:hover {
+    box-shadow: 0 12px 48px rgba(59, 130, 246, 0.5) !important;
+    border-color: #60a5fa !important;
+}
+
+body.dark-mode .dashboard-card h3,
+body.dark-mode .dashboard-card h4,
+body.dark-mode .dashboard-card p,
+body.dark-mode .dashboard-card span,
+body.dark-mode .dashboard-card td,
+body.dark-mode .dashboard-card th {
+    color: #ffffff !important;
+}
+
+body.dark-mode .dashboard-card .table {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark-mode .dashboard-card .table thead th {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+body.dark-mode .dashboard-card .table tbody td {
+    background: transparent !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .dashboard-card .table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+body.dark-mode .card-icon {
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark-mode .card-content {
+    color: #ffffff !important;
+}
+
+body.dark-mode .card-content * {
+    color: #ffffff !important;
+}
+
+/* Keep bulletin text black in dark mode - MAXIMUM PRIORITY */
+body.dark-mode .bulletin-page-content,
+body.dark-mode .bulletin-page-content *,
+body.dark-mode .bulletin-page-content div,
+body.dark-mode .bulletin-page-content span,
+body.dark-mode .bulletin-page-content p,
+body.dark-mode .bulletin-page-content td,
+body.dark-mode .bulletin-page-content th,
+body.dark-mode .bulletin-page-content h1,
+body.dark-mode .bulletin-page-content h2,
+body.dark-mode .bulletin-page-content h3,
+body.dark-mode .page.bulletin-page-content,
+body.dark-mode .page.bulletin-page-content *,
+body.dark-mode #bulletin-content,
+body.dark-mode #bulletin-content *,
+body.dark-mode .bulletin-container,
+body.dark-mode .bulletin-container *,
+body.dark-mode .bulletin-page,
+body.dark-mode .bulletin-page *,
+body.dark-mode [id*="bulletin"],
+body.dark-mode [id*="bulletin"] *,
+body.dark-mode [class*="bulletin"],
+body.dark-mode [class*="bulletin"] * {
+    color: #000000 !important;
+    background: #ffffff !important;
+}
+
+/* Extra specificity for bulletin tables */
+body.dark-mode .bulletin-page-content table,
+body.dark-mode .bulletin-page-content table *,
+body.dark-mode .bulletin-page-content .table,
+body.dark-mode .bulletin-page-content .table * {
+    color: #000000 !important;
+    background: #ffffff !important;
+}
+
+/* CRITICAL FIX: Force table visibility on all admin pages to prevent disappearing on hover */
+body .card .table,
+body .card .table *,
+body .card .table-responsive,
+body .card .table-responsive *,
+body .table-responsive .table,
+body .table-responsive .table * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+body .card:hover .table,
+body .card:hover .table *,
+body .card:hover .table-responsive,
+body .card:hover .table-responsive *,
+body .table:hover,
+body .table:hover *,
+body .table tbody tr:hover,
+body .table tbody tr:hover * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Disable problematic transforms on tables inside cards */
+body .card .table,
+body .card .table *,
+body .card:hover .table,
+body .card:hover .table * {
+    transform: none !important;
+    animation: none !important;
+}
+
+/* Exception for student notes page - prevent card content from disappearing on hover */
+.page-header + .mb-3 + .card,
+.page-header + .mb-3 + .card *,
+.page-header + .mb-3 + .card:hover,
+.page-header + .mb-3 + .card:hover * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+/* Exception for student notes statistics card */
+body.dark-mode .student-notes-statistics-card,
+body.dark-mode .student-notes-statistics-card *,
+body.dark-mode .student-notes-statistics-card:hover,
+body.dark-mode .student-notes-statistics-card:hover * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+/* Dark mode for admin dashboard */
+body.dark-mode .admin-dashboard .dashboard-header {
+    background: #020617 !important;
+}
+
+body.dark-mode .admin-dashboard .info-card,
+body.dark-mode .admin-dashboard .success-card,
+body.dark-mode .admin-dashboard .warning-card,
+body.dark-mode .admin-dashboard .actions-card {
+    background: #020617 !important;
+    border-color: #1f2937 !important;
+}
+
+body.dark-mode .admin-dashboard .card-body {
+    background: #020617 !important;
+}
+
+body.dark-mode .admin-dashboard .text-gray-800 {
+    color: #ffffff !important;
+}
+
+body.dark-mode .admin-dashboard .text-gray-300 {
+    color: #9ca3af !important;
+}
+
+body.dark-mode .admin-dashboard .card-header-primary {
+    background: #020617 !important;
+    border-bottom-color: #1f2937 !important;
+}
+
+body.dark-mode .admin-dashboard .btn-light {
+    background: #1f2937 !important;
+    color: #ffffff !important;
+    border-color: #374151 !important;
+}
+
+body.dark-mode .admin-dashboard .btn-light:hover {
+    background: #374151 !important;
+    border-color: #4b5563 !important;
+}
+
+/* Fix modal backdrop and z-index issues */
+.modal-backdrop {
+    z-index: 9998 !important;
+    pointer-events: none !important;
+}
+
+.modal {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+    z-index: 10000 !important;
+}
+
+.modal-content {
+    pointer-events: auto !important;
+    z-index: 10001 !important;
+}
+
+.modal-dialog-centered {
+    display: flex !important;
+    align-items: center !important;
+    min-height: calc(100% - 1rem) !important;
+}
+
+/* Ensure all modal elements are clickable */
+.modal,
+.modal *,
+.modal button,
+.modal .btn,
+.modal form,
+.modal input,
+.modal-dialog,
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer {
+    pointer-events: auto !important;
+    cursor: auto !important;
+}
+
+.modal .btn,
+.modal button {
+    cursor: pointer !important;
+}
+
+/* Override any conflicting rules for modals */
+body .modal,
+body .modal *,
+body .modal .btn,
+body .modal button {
+    transform: none !important;
+    animation: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* CRITICAL FIX: Prevent horizontal overflow on all pages */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+}
+
+body {
+    position: relative;
+}
+
+.container-fluid,
+.container,
+.row {
+    max-width: 100% !important;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Prevent specific elements from causing overflow */
+.card,
+.table-responsive,
+.dashboard-container,
+.content-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
 }

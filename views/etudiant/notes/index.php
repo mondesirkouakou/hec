@@ -252,6 +252,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
+/* Dark mode styles for student notes page */
+body.dark-mode .summary-card {
+    background: #020617 !important;
+    border: 1px solid #1f2937 !important;
+}
+
+body.dark-mode .summary-content h3 {
+    color: #ffffff !important;
+}
+
+body.dark-mode .summary-value {
+    color: #ffffff !important;
+}
+
+body.dark-mode .summary-comparison,
+body.dark-mode .summary-detail {
+    color: #ffffff !important;
+}
+
+body.dark-mode .chart-container {
+    background: #020617 !important;
+    border: 1px solid #1f2937 !important;
+}
+
 .matieres-container {
     display: flex;
     flex-direction: column;

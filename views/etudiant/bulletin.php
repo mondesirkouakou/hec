@@ -19,8 +19,9 @@ if (!$isDownload) {
     <title>Impression bulletin</title>
     <style>
         @page { size: A4 portrait; margin: 0; }
-        html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { font-family: Arial, sans-serif; }
+        html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; }
+        body { font-family: Arial, sans-serif; color: #000 !important; }
+        * { color: #000 !important; }
         .print-sheet { width: 210mm; height: 297mm; margin: 0; padding: 0; overflow: hidden; }
         .page { width: 210mm; margin: 0; padding: 6mm !important; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; }
@@ -169,7 +170,7 @@ if ($adminBulletinMode) {
     <div class="print-scale-wrap">
 <?php endif; ?>
 
-<div class="page" style="width:210mm;min-height:297mm;background-color:white;margin:0 auto;padding:12mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:14px;font-family:Arial,sans-serif;position:relative;padding-bottom:6mm;display:flex;flex-direction:column;">
+<div class="page bulletin-page-content" style="width:210mm;min-height:297mm;background-color:white !important;margin:0 auto;padding:12mm;box-shadow:0 0 10px rgba(0,0,0,0.1);box-sizing:border-box;font-size:14px;font-family:Arial,sans-serif;position:relative;padding-bottom:6mm;display:flex;flex-direction:column;color:#000 !important;">
     <div class="page-main" style="flex:1 0 auto;">
     <div class="header" style="margin-bottom:15px;text-transform:uppercase;font-weight:bold;line-height:1.4;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">

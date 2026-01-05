@@ -5,6 +5,40 @@ $pageTitle = (($filtreStatutListes ?? null) === 'en_attente')
 ob_start();
 ?>
 
+<style>
+/* Force table visibility on admin classes page - CRITICAL FIX */
+body.admin-classes-page .card,
+body.admin-classes-page .card *,
+body.admin-classes-page .table,
+body.admin-classes-page .table *,
+body.admin-classes-page .table-responsive,
+body.admin-classes-page .table-responsive * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+body.admin-classes-page .card:hover,
+body.admin-classes-page .card:hover *,
+body.admin-classes-page .table:hover,
+body.admin-classes-page .table:hover *,
+body.admin-classes-page .table tbody tr:hover,
+body.admin-classes-page .table tbody tr:hover * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+}
+</style>
+
+<script>
+// Add page-specific class to body for scoped CSS
+if (document.body && !document.body.classList.contains('admin-classes-page')) {
+    document.body.classList.add('admin-classes-page');
+}
+</script>
+
 <div class="page-header">
     <h1>
         <i class="fas fa-chalkboard"></i>

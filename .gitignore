@@ -1,0 +1,40 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# XAMPP / local env
+xampp/
+
+# PHP / Composer
+/vendor/
+composer.lock
+
+# Cache / sessions
+/tmp/
+cache/
+
+# Uploads / generated assets (adjust if you want to keep them tracked)
+/uploads/
+
+# Environment files
+.env
+.env.*
+
+# Node (if ever used)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+/dist/
+/build/

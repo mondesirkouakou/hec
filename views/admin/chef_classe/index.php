@@ -3,6 +3,40 @@ $pageTitle = 'Gérer les chefs de classe';
 ob_start();
 ?>
 
+<style>
+/* Force table visibility on admin chefs-classe page - CRITICAL FIX */
+body.admin-chefs-classe-page .card,
+body.admin-chefs-classe-page .card *,
+body.admin-chefs-classe-page .table,
+body.admin-chefs-classe-page .table *,
+body.admin-chefs-classe-page .table-responsive,
+body.admin-chefs-classe-page .table-responsive * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+body.admin-chefs-classe-page .card:hover,
+body.admin-chefs-classe-page .card:hover *,
+body.admin-chefs-classe-page .table:hover,
+body.admin-chefs-classe-page .table:hover *,
+body.admin-chefs-classe-page .table tbody tr:hover,
+body.admin-chefs-classe-page .table tbody tr:hover * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+}
+</style>
+
+<script>
+// Add page-specific class to body for scoped CSS
+if (document.body && !document.body.classList.contains('admin-chefs-classe-page')) {
+    document.body.classList.add('admin-chefs-classe-page');
+}
+</script>
+
 <div class="page-header">
     <h1>
         <i class="fas fa-user-tie"></i>

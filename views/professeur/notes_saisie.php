@@ -3,6 +3,76 @@ $pageTitle = 'Saisie des notes';
 ob_start();
 ?>
 
+<style>
+@media print {
+    /* Hide navigation and UI elements */
+    header,
+    .navbar,
+    .animated-header,
+    .animated-footer,
+    .sidebar,
+    nav,
+    .btn-toolbar,
+    .d-flex.justify-content-between,
+    .alert,
+    .btn,
+    button,
+    h1.h2,
+    .container-fluid > .d-flex {
+        display: none !important;
+    }
+    
+    /* Remove card styling for print */
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+        margin: 0 !important;
+    }
+    
+    .card-header {
+        background: white !important;
+        border-bottom: 2px solid #000 !important;
+        padding: 10px !important;
+    }
+    
+    .card-header h6 {
+        color: #000 !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+    }
+    
+    /* Ensure table is fully visible */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    .table {
+        page-break-inside: auto;
+        font-size: 12px;
+    }
+    
+    .table thead {
+        background: #f0f0f0 !important;
+    }
+    
+    .table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000 !important;
+        padding: 5px !important;
+    }
+    
+    /* Remove container padding */
+    .container-fluid {
+        padding: 0 !important;
+    }
+}
+</style>
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
         <h1 class="h2">Saisie des notes</h1>
@@ -92,7 +162,7 @@ ob_start();
                     </div>
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Enregistrer</button>
-                        <a class="btn btn-outline-secondary" href="<?= BASE_URL ?>professeur/export/notes/<?= (int)$matiere['id'] ?>/<?= (int)$classe['id'] ?>"><i class="fas fa-file-csv"></i> Exporter CSV</a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="fas fa-file-pdf"></i> Imprimer PDF</button>
                     </div>
                 </form>
             <?php else: ?>

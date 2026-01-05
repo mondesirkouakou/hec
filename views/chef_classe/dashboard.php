@@ -17,10 +17,10 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
 
 <div class="container-fluid dashboard-container">
     <div class="dashboard-header animated-header">
-        <h1 class="dashboard-title neon-effect">Tableau de bord Chef de Classe</h1>
+        <h1 class="dashboard-title">Tableau de bord Chef de Classe</h1>
         <div class="header-actions">
             <?php if (!$listeSoumise): ?>
-                <button type="button" class="btn btn-primary btn-lg ripple-effect explosive-zoom" data-bs-toggle="modal" data-bs-target="#soumettreModal">
+                <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#soumettreModal">
                     <i class="fas fa-paper-plane"></i> Soumettre les listes
                 </button>
             <?php else: ?>
@@ -172,26 +172,24 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
 </div>
 
 <!-- Modal Soumettre -->
-<div class="modal fade animated-modal" id="soumettreModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content modal-content-animated">
-            <div class="modal-header modal-header-primary">
-                <h5 class="modal-title">Soumettre les listes</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+<div class="modal fade" id="soumettreModal" tabindex="-1" role="dialog" aria-labelledby="soumettreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="soumettreModalLabel">Soumettre les listes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body modal-body-animated">
-                <div class="submission-icon">
+            <div class="modal-body">
+                <div class="text-center mb-3">
                     <i class="fas fa-paper-plane fa-3x text-primary"></i>
                 </div>
                 <p class="text-center">Êtes-vous sûr de vouloir soumettre les listes à l'administrateur ?</p>
                 <p class="text-warning text-center"><strong>Attention :</strong> Après soumission, vous ne pourrez plus modifier les listes.</p>
             </div>
-            <div class="modal-footer modal-footer-animated">
-                <button type="button" class="btn btn-secondary ripple-effect" data-bs-dismiss="modal">Annuler</button>
-                <form action="<?= BASE_URL ?>chef-classe/soumettre" method="POST">
-                    <button type="submit" class="btn btn-success ripple-effect">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="<?= BASE_URL ?>chef-classe/soumettre" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-success">
                         <i class="fas fa-paper-plane"></i> Soumettre
                     </button>
                 </form>
@@ -201,8 +199,13 @@ $listeSoumise = ($classe['statut_listes'] ?? '') === 'en_attente';
 </div>
 
 <!-- Modal Ajouter Étudiant -->
-<div class="modal fade animated-modal" id="ajouterEtudiantModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="ajouterEtudiantModal" tabindex="-1" role="dialog" aria-labelledby="ajouterEtudiantModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="ajouterEtudiantModalLabel">Ajouter un étudiant</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
         <div class="modal-content modal-content-animated">
             <div class="modal-header modal-header-secondary">
                 <h5 class="modal-title">Ajouter un étudiant</h5>
