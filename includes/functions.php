@@ -1,4 +1,11 @@
 <?php
+/**
+ * Fonctions utilitaires globales
+ */
+
+// Inclure le système CSRF et les fonctions de sécurité
+require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/security.php';
 
 // Fonction pour hacher les mots de passe
 function hashPassword($password) {

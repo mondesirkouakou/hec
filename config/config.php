@@ -36,4 +36,26 @@ if (session_status() == PHP_SESSION_NONE) {
     ]);
     session_start();
 }
+
+// Headers de sécurité
+header("X-Frame-Options: DENY");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+
+// Content Security Policy
+$csp = "default-src 'self'; ";
+$csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; ";
+$csp .= "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; ";
+$csp .= "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; ";
+$csp .= "img-src 'self' data: https:; ";
+$csp .= "connect-src 'self'; ";
+$csp .= "frame-ancestors 'none';";
+header("Content-Security-Policy: " . $csp);
+
+// HSTS (HTTP Strict Transport Security) - uniquement en HTTPS
+if ($isHttps) {
+    header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+}
 ?>
