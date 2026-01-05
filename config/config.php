@@ -1,4 +1,7 @@
 <?php
+// Charger le gestionnaire d'erreurs en premier
+require_once __DIR__ . '/../includes/error_handler.php';
+
 // Paramètres de connexion à la base de données
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
@@ -26,6 +29,9 @@ if (session_status() == PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.cookie_httponly', '1');
     ini_set('session.use_only_cookies', '1');
+    ini_set('session.cookie_lifetime', '0'); // Session expire à la fermeture du navigateur
+    ini_set('session.gc_maxlifetime', '1800'); // 30 minutes d'inactivité max
+    
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => $basePath ? ($basePath . '/') : '/',
@@ -35,6 +41,10 @@ if (session_status() == PHP_SESSION_NONE) {
         'samesite' => 'Lax',
     ]);
     session_start();
+    
+    // Initialiser le gestionnaire de sessions sécurisé
+    require_once __DIR__ . '/../includes/session_manager.php';
+    SessionManager::init();
 }
 
 // Headers de sécurité

@@ -7,6 +7,54 @@
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/security.php';
 
+/**
+ * Fonction d'échappement pour l'affichage sécurisé (Protection XSS)
+ * À utiliser SYSTÉMATIQUEMENT pour toute donnée utilisateur affichée
+ * 
+ * @param mixed $value La valeur à échapper
+ * @param bool $doubleEncode Si true, encode les entités HTML existantes
+ * @return string La valeur échappée et sécurisée
+ * 
+ * Exemples d'utilisation :
+ * - <?= e($user['nom']) ?>
+ * - <input value="<?= e($data['email']) ?>">
+ * - <textarea><?= e($comment) ?></textarea>
+ */
+function e($value, $doubleEncode = true) {
+    if ($value === null) {
+        return '';
+    }
+    
+    if (is_array($value)) {
+        return array_map('e', $value);
+    }
+    
+    return htmlspecialchars((string)$value, ENT_QUOTES | ENT_HTML5, 'UTF-8', $doubleEncode);
+}
+
+/**
+ * Alias de e() pour compatibilité
+ */
+function esc($value) {
+    return e($value);
+}
+
+/**
+ * Échappement pour attributs JavaScript
+ * Utiliser dans : onclick="alert('<?= js($message) ?>')"
+ */
+function js($value) {
+    return json_encode((string)$value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+}
+
+/**
+ * Échappement pour URLs
+ * Utiliser dans : <a href="<?= url($link) ?>">
+ */
+function url($value) {
+    return htmlspecialchars(urlencode((string)$value), ENT_QUOTES, 'UTF-8');
+}
+
 // Fonction pour hacher les mots de passe
 function hashPassword($password) {
     return password_hash($password, PASSWORD_DEFAULT);
