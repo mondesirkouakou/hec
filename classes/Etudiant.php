@@ -26,7 +26,17 @@ class Etudiant extends User {
             }
 
             // 1. Créer d'abord l'utilisateur de base
-            $emailLocal = preg_replace('/[^A-Za-z0-9._-]/', '-', $etudiantData['matricule']);
+            // Filtrer le matricule pour l'email (remplacer caractères non autorisés par des tirets)
+            $emailLocal = '';
+            $matricule = $etudiantData['matricule'];
+            for ($i = 0; $i < strlen($matricule); $i++) {
+                $char = $matricule[$i];
+                if (ctype_alnum($char) || $char === '.' || $char === '_' || $char === '-') {
+                    $emailLocal .= $char;
+                } else {
+                    $emailLocal .= '-';
+                }
+            }
             $emailGenerated = strtolower($emailLocal) . '@etu.hec.ci';
             $userData = [
                 'username' => $etudiantData['matricule'],

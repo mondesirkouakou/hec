@@ -245,7 +245,13 @@ class AnneeUniversitaireController {
                 foreach ($classes as $c) {
                     // Générer un nouveau code unique pour la nouvelle année
                     // On retire l'éventuel suffixe d'année existant et on ajoute le nouveau
-                    $baseCode = preg_replace('/_\d{4}$/', '', $c['code']);
+                    $code = $c['code'];
+                    // Retirer le suffixe _YYYY s'il existe
+                    if (preg_match('/_(\d{4})$/', $code, $matches)) {
+                        $baseCode = substr($code, 0, -5); // Enlever les 5 derniers caractères (_YYYY)
+                    } else {
+                        $baseCode = $code;
+                    }
                     $newCode = $baseCode . '_' . $nouvelleDebut;
                     
                     // Vérifier si ce code existe déjà, sinon utiliser le code original

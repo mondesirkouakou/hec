@@ -240,8 +240,20 @@ if ($adminBulletinMode) {
                 $intituleRaw  = trim($classe['intitule'] ?? '');
 
                 // Extraire la filière (lettres) et un éventuel numéro (chiffres) depuis l'intitulé
-                $filiere      = preg_replace('/[^A-Za-z]/', '', $intituleRaw); // "IDA 3" -> "IDA"
-                $numeroFromIntitule = preg_replace('/[^0-9]/', '', $intituleRaw); // "IDA 3" -> "3"
+                // Filtrer pour garder uniquement les lettres
+                $filiere = '';
+                for ($i = 0; $i < strlen($intituleRaw); $i++) {
+                    if (ctype_alpha($intituleRaw[$i])) {
+                        $filiere .= $intituleRaw[$i];
+                    }
+                }
+                // Filtrer pour garder uniquement les chiffres
+                $numeroFromIntitule = '';
+                for ($i = 0; $i < strlen($intituleRaw); $i++) {
+                    if (ctype_digit($intituleRaw[$i])) {
+                        $numeroFromIntitule .= $intituleRaw[$i];
+                    }
+                }
 
                 // Si le niveau contient déjà un chiffre (ex: "Licence 1"), on le garde tel quel.
                 // Sinon, si on a trouvé un numéro dans l'intitulé, on l'ajoute après le niveau.
